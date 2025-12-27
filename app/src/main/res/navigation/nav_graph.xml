@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/statsFragment">
+
+    <fragment
+        android:id="@+id/statsFragment"
+        android:name="com.example.mindfulgrowth.ui.StatsFragment"
+        android:label="Stats" />
+
+    <fragment
+        android:id="@+id/customizeFragment"
+        android:name="com.example.mindfulgrowth.ui.CustomizeFragment"
+        android:label="Customize" />
+
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="com.example.mindfulgrowth.ui.SettingsFragment"
+        android:label="Settings" />
+</navigation>

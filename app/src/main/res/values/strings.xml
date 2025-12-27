@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">Mindful Growth</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_start_aod">Start AOD Service</string>
+    <string name="settings_general">General</string>
+    <string name="settings_aod_title">Always On Display</string>
+    <string name="settings_aod_subtitle">Show tree when screen is off</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_wake_gesture_title">Wake Gesture</string>
+    <string name="settings_single_tap">Single Tap</string>
+    <string name="settings_double_tap">Double Tap</string>
+</resources>
