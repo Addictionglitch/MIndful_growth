@@ -1,6 +1,5 @@
 package com.example.mindfulgrowth.service
 
-import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
@@ -13,21 +12,24 @@ import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
 import androidx.core.app.NotificationCompat
-import kotlinx.coroutines.*
 import com.example.mindfulgrowth.ui.aod.LockScreenActivity
+import kotlinx.coroutines.*
 
 class ScreenStateService : Service() {
 
     private val serviceScope = CoroutineScope(Dispatchers.Main)
     private var aodJob: Job? = null
-    private var wakeLock: PowerManager.WakeLock? = null 
+    private var wakeLock: PowerManager.WakeLock? = null
+
+    companion object {
+        private const val NOTIFICATION_ID = 1
+        private const val CHANNEL_ID = "ScreenStateServiceChannel"
+    }
 
     private val screenReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
                 Intent.ACTION_SCREEN_OFF -> {
-                    // REVERTED: Removed the "isActive" check. 
-                    // We just blindly launch the AOD when the screen turns off.
                     acquireWakeLock()
                     scheduleAodLaunch(context)
                 }
@@ -43,8 +45,7 @@ class ScreenStateService : Service() {
     private fun scheduleAodLaunch(context: Context) {
         aodJob?.cancel()
         aodJob = serviceScope.launch {
-            // Fast 500ms delay
-            delay(500) 
+            delay(500)
 
             if (isActive) {
                 android.util.Log.d("DEBUG_AOD", "Launching AOD...")
@@ -53,10 +54,10 @@ class ScreenStateService : Service() {
                 lockIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
                 lockIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
                 lockIntent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
-                
+
                 startActivity(lockIntent)
-                
-                delay(1000) 
+
+                delay(1000)
                 releaseWakeLock()
             } else {
                 releaseWakeLock()
@@ -65,7 +66,7 @@ class ScreenStateService : Service() {
     }
 
     private fun acquireWakeLock() {
-        if (wakeLock?.isHeld == true) return 
+        if (wakeLock?.isHeld == true) return
         val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MindfulGrowth:LaunchLock")
         wakeLock?.acquire(10 * 1000L)
@@ -87,31 +88,46 @@ class ScreenStateService : Service() {
         filter.priority = 1000
         registerReceiver(screenReceiver, filter)
     }
-    
-    // ... [Standard Boilerplate] ...
+
     private fun startForegroundService() {
-        val channelId = "MindfulGrowth_Service"
-        val channelName = "Background Monitor"
+        try {
+            // Create notification channel for Android 8.0+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val channel = NotificationChannel(
+                    CHANNEL_ID,
+                    "Screen State Service",
+                    NotificationManager.IMPORTANCE_LOW
+                )
+                val notificationManager = getSystemService(NotificationManager::class.java)
+                notificationManager?.createNotificationChannel(channel)
+            }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                channelId, channelName, NotificationManager.IMPORTANCE_LOW
-            )
-            val manager = getSystemService(NotificationManager::class.java)
-            manager.createNotificationChannel(channel)
+            // Build notification
+            val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle("Mindful Growth Running")
+                .setContentText("Tracking screen state...")
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .build()
+
+            // Start foreground service with compatible type
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                // For Android 14+, specify compatible foreground service type
+                startForeground(
+                    NOTIFICATION_ID,
+                    notification,
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+                )
+            } else {
+                // For Android 12-13
+                startForeground(NOTIFICATION_ID, notification)
+            }
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Gracefully handle foreground service startup failure
+            stopSelf()
         }
-
-        val notification: Notification = NotificationCompat.Builder(this, channelId)
-            .setContentTitle("Mindful Growth is Active")
-            .setContentText("Monitoring screen time...")
-            .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-            .build()
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
-        } else {
-            startForeground(1, notification)
-        }    
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -127,5 +143,6 @@ class ScreenStateService : Service() {
         unregisterReceiver(screenReceiver)
         aodJob?.cancel()
         releaseWakeLock()
+        stopForeground(STOP_FOREGROUND_REMOVE)
     }
 }

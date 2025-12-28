@@ -1,0 +1,86 @@
+package com.example.mindfulgrowth.ui.components
+
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.dp
+import com.example.mindfulgrowth.ui.theme.MindfulTheme
+
+@Composable
+fun ModalBottomSheet(
+    visible: Boolean,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val colors = MindfulTheme.colors
+    var dragOffset by remember { mutableStateOf(0f) }
+    val threshold = 200f
+    
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn() + slideInVertically(initialOffsetY = { it }),
+        exit = fadeOut() + slideOutVertically(targetOffsetY = { it })
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(colors.surfaceOverlay)
+                .clickable(
+                    onClick = onDismiss,
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() }
+                ),
+            contentAlignment = Alignment.BottomCenter
+        ) {
+            GlassCard(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+                    .graphicsLayer {
+                        translationY = dragOffset.coerceAtLeast(0f)
+                    }
+                    .pointerInput(Unit) {
+                        detectVerticalDragGestures(
+                            onDragEnd = {
+                                if (dragOffset > threshold) {
+                                    onDismiss()
+                                }
+                                dragOffset = 0f
+                            },
+                            onDragCancel = {
+                                dragOffset = 0f
+                            },
+                            onVerticalDrag = { _, dragAmount ->
+                                dragOffset += dragAmount
+                            }
+                        )
+                    }
+                    .clickable(
+                        onClick = {},
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }
+                    ),
+                cornerRadius = MindfulTheme.shapes.extraLarge,
+                bloom = true,
+                contentPadding = PaddingValues(MindfulTheme.spacing.xl)
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    content = content
+                )
+            }
+        }
+    }
+}
