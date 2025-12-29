@@ -10,7 +10,9 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -20,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -29,11 +32,14 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.example.mindfulgrowth.service.ScreenStateService
 import com.example.mindfulgrowth.ui.components.*
-import com.example.mindfulgrowth.ui.theme.MindfulTheme
+import com.example.mindfulgrowth.ui.navigation.BottomNavigationBar
+import com.example.mindfulgrowth.ui.theme.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -65,12 +71,12 @@ data class SettingsUiState(
 class SettingsViewModel(private val context: Context) : ViewModel() {
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
-    
+
     init {
         loadSettings()
         checkPermissions()
     }
-    
+
     private fun loadSettings() {
         viewModelScope.launch {
             try {
@@ -87,7 +93,7 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
             }
         }
     }
-    
+
     private fun checkPermissions() {
         val hasOverlay = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             Settings.canDrawOverlays(context)
@@ -96,42 +102,42 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
         }
         _uiState.value = _uiState.value.copy(hasOverlayPermission = hasOverlay)
     }
-    
+
     fun toggleAod(enabled: Boolean) {
         viewModelScope.launch {
             context.dataStore.edit { it[PreferencesKeys.AOD_ENABLED] = enabled }
             _uiState.value = _uiState.value.copy(aodEnabled = enabled)
         }
     }
-    
+
     fun toggleClock(enabled: Boolean) {
         viewModelScope.launch {
             context.dataStore.edit { it[PreferencesKeys.CLOCK_ENABLED] = enabled }
             _uiState.value = _uiState.value.copy(clockEnabled = enabled)
         }
     }
-    
+
     fun toggleBwMode(enabled: Boolean) {
         viewModelScope.launch {
             context.dataStore.edit { it[PreferencesKeys.BW_MODE] = enabled }
             _uiState.value = _uiState.value.copy(bwMode = enabled)
         }
     }
-    
+
     fun updateBrightness(brightness: Float) {
         viewModelScope.launch {
             context.dataStore.edit { it[PreferencesKeys.BRIGHTNESS] = brightness }
             _uiState.value = _uiState.value.copy(brightness = brightness)
         }
     }
-    
+
     fun setWakeGesture(gesture: Int) {
         viewModelScope.launch {
             context.dataStore.edit { it[PreferencesKeys.WAKE_GESTURE] = gesture }
             _uiState.value = _uiState.value.copy(wakeGesture = gesture)
         }
     }
-    
+
     fun startFocusMode() {
         if (_uiState.value.hasOverlayPermission) {
             val intent = Intent(context, ScreenStateService::class.java)
@@ -143,7 +149,7 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
             _uiState.value = _uiState.value.copy(isServiceRunning = true)
         }
     }
-    
+
     fun requestOverlayPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             val intent = Intent(
@@ -157,166 +163,114 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
 }
 
 // Main Composable
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    navController: NavController
 ) {
     val context = LocalContext.current
     val viewModel: SettingsViewModel = viewModel(
         factory = SettingsViewModelFactory(context)
     )
     val uiState by viewModel.uiState.collectAsState()
-    
-    SettingsScreenContent(
-        uiState = uiState,
-        onAodToggle = viewModel::toggleAod,
-        onClockToggle = viewModel::toggleClock,
-        onBwModeToggle = viewModel::toggleBwMode,
-        onBrightnessChange = viewModel::updateBrightness,
-        onWakeGestureChange = viewModel::setWakeGesture,
-        onStartFocusMode = viewModel::startFocusMode,
-        onRequestPermission = viewModel::requestOverlayPermission,
-        modifier = modifier
-    )
-}
 
-@Composable
-private fun SettingsScreenContent(
-    uiState: SettingsUiState,
-    onAodToggle: (Boolean) -> Unit,
-    onClockToggle: (Boolean) -> Unit,
-    onBwModeToggle: (Boolean) -> Unit,
-    onBrightnessChange: (Float) -> Unit,
-    onWakeGestureChange: (Int) -> Unit,
-    onStartFocusMode: () -> Unit,
-    onRequestPermission: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val colors = MindfulTheme.colors
-    val spacing = MindfulTheme.spacing
-    val scrollState = rememberScrollState()
-    
-    Box(modifier = modifier.fillMaxSize()) {
-        Box(
-            modifier = Modifier
+    Scaffold(
+        containerColor = Color(0xFF0F1111), // BackgroundColor (kept but content gets gradient)
+        topBar = { SettingsTopBar() },
+        bottomBar = { BottomNavigationBar(navController = navController) }
+    ) { paddingValues ->
+        LazyColumn(
+            modifier = modifier
                 .fillMaxSize()
-                .drawBehind {
-                    drawRect(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                colors.gradientStart,
-                                colors.gradientMid,
-                                colors.gradientEnd
-                            )
+                .padding(paddingValues)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0xFF021024), // DarkNavy
+                            Color(0xFF052659)  // RichBlue
                         )
                     )
-                }
-        )
-        
-        FloatingParticles()
-        
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(scrollState)
-                .padding(spacing.lg)
+                ),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            SettingsHeader(modifier = Modifier.padding(bottom = spacing.xl))
-            
-            SectionHeader(
-                title = "DISPLAY & BEHAVIOR",
-                modifier = Modifier.padding(bottom = spacing.md)
-            )
-            
-            SettingToggleCard(
-                title = "Always On Display",
-                subtitle = "Show tree when locked",
-                icon = Icons.Default.PhoneAndroid,
-                checked = uiState.aodEnabled,
-                onCheckedChange = onAodToggle,
-                modifier = Modifier.padding(bottom = spacing.sm)
-            )
-            
-            SettingToggleCard(
-                title = "Show Clock",
-                subtitle = "Display time on lock screen",
-                icon = Icons.Default.AccessTime,
-                checked = uiState.clockEnabled,
-                onCheckedChange = onClockToggle,
-                modifier = Modifier.padding(bottom = spacing.sm)
-            )
-            
-            SettingToggleCard(
-                title = "Black & White Mode",
-                subtitle = "Reduce visual stimulation",
-                icon = Icons.Default.Contrast,
-                checked = uiState.bwMode,
-                onCheckedChange = onBwModeToggle,
-                modifier = Modifier.padding(bottom = spacing.md)
-            )
-            
-            BrightnessSliderCard(
-                brightness = uiState.brightness,
-                onBrightnessChange = onBrightnessChange,
-                modifier = Modifier.padding(bottom = spacing.xl)
-            )
-            
-            SectionHeader(
-                title = "WAKE GESTURE",
-                modifier = Modifier.padding(bottom = spacing.md)
-            )
-            
-            GlassCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = spacing.xl)
-            ) {
-                GlassSegmentedControl(
-                    options = listOf("Single Tap", "Double Tap"),
-                    selectedIndex = uiState.wakeGesture,
-                    onSelectionChange = onWakeGestureChange,
+            item { SettingsHeader(modifier = Modifier.padding(bottom = 16.dp)) }
+
+            item { SectionHeader("DISPLAY & BEHAVIOR", Modifier.padding(vertical = 8.dp)) }
+
+            item {
+                SettingItem(
+                    title = "Always On Display",
+                    description = "Show tree when locked",
+                    icon = Icons.Default.PhoneAndroid,
+                    value = uiState.aodEnabled,
+                    onToggle = viewModel::toggleAod
+                )
+            }
+            item {
+                SettingItem(
+                    title = "Show Clock",
+                    description = "Display time on lock screen",
+                    icon = Icons.Default.AccessTime,
+                    value = uiState.clockEnabled,
+                    onToggle = viewModel::toggleClock
+                )
+            }
+            item {
+                SettingItem(
+                    title = "Black & White Mode",
+                    description = "Reduce visual stimulation",
+                    icon = Icons.Default.Contrast,
+                    value = uiState.bwMode,
+                    onToggle = viewModel::toggleBwMode
+                )
+            }
+
+            item { BrightnessSliderCard(uiState.brightness, viewModel::updateBrightness) }
+
+            item { SectionHeader("WAKE GESTURE", Modifier.padding(vertical = 8.dp)) }
+
+            item {
+                GlassCard(
                     modifier = Modifier.fillMaxWidth()
-                )
+                ) {
+                    GlassSegmentedControl(
+                        options = listOf("Single Tap", "Double Tap"),
+                        selectedIndex = uiState.wakeGesture,
+                        onSelectionChange = viewModel::setWakeGesture,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
-            
+
             if (!uiState.hasOverlayPermission) {
-                PermissionCard(
-                    onRequestPermission = onRequestPermission,
-                    modifier = Modifier.padding(bottom = spacing.xl)
-                )
+                item { PermissionCard(viewModel::requestOverlayPermission) }
             }
-            
-            Spacer(Modifier.weight(1f))
-            
-            GlassButton(
-                text = if (uiState.isServiceRunning) "Focus Mode Active" else "Activate Focus Mode",
-                onClick = onStartFocusMode,
-                style = GlassButtonStyle.PRIMARY,
-                enabled = uiState.hasOverlayPermission && !uiState.isServiceRunning,
-                icon = Icons.Default.PlayArrow,
-                modifier = Modifier.fillMaxWidth()
-            )
-            
-            Spacer(Modifier.height(100.dp))
         }
     }
 }
 
 @Composable
+private fun SettingsTopBar() {
+    TopAppBar(
+        title = { Text("Settings") },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = Color(0xFF0F1111),
+            titleContentColor = Color(0xFFF5F5F5)
+        )
+    )
+}
+
+@Composable
 private fun SettingsHeader(modifier: Modifier = Modifier) {
+    // Keep only the small subtitle under the TopAppBar to avoid duplicate screen titles.
     Column(modifier = modifier) {
         Text(
-            text = "Settings",
-            style = MaterialTheme.typography.displaySmall.copy(
-                fontWeight = FontWeight.Medium
-            ),
-            color = MindfulTheme.colors.textPrimary
-        )
-        Text(
             text = "Customize your focus experience",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MindfulTheme.colors.textSecondary,
-            modifier = Modifier.padding(top = 4.dp)
+            style = MaterialTheme.typography.titleMedium,
+            color = Color(0xFFA7A9A9), // TextSecondary
+            modifier = Modifier.padding(vertical = 4.dp)
         )
     }
 }
@@ -328,104 +282,76 @@ private fun SectionHeader(
 ) {
     Text(
         text = title,
-        style = MaterialTheme.typography.labelSmall.copy(
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.5.sp
-        ),
-        color = MindfulTheme.colors.goldPrimary,
+        style = MaterialTheme.typography.labelLarge,
+        color = Color(0xFFD4AF37), // GoldPrimary
         modifier = modifier
     )
 }
 
 @Composable
-private fun SettingToggleCard(
+fun SettingItem(
     title: String,
-    subtitle: String,
+    description: String,
     icon: ImageVector,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
+    value: Boolean,
+    onToggle: (Boolean) -> Unit
 ) {
-    GlassCardCompact(modifier = modifier) {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF1F2121) // SurfaceColor
+        ),
+        elevation = CardDefaults.cardElevation(2.dp),
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
         Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(MindfulTheme.spacing.md)
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(
-                        color = MindfulTheme.colors.glassBackground,
-                        shape = androidx.compose.foundation.shape.CircleShape
-                    ),
-                contentAlignment = Alignment.Center
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = MindfulTheme.colors.goldPrimary,
-                    modifier = Modifier.size(24.dp)
+                    tint = Color(0xFFD4AF37), // Gold
+                    modifier = Modifier
+                        .size(24.dp)
+                        .padding(end = 16.dp)
                 )
+
+                Column {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color(0xFFF5F5F5) // White
+                    )
+                    Text(
+                        text = description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFF777C7C) // Dimmed gray
+                    )
+                }
             }
-            
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = FontWeight.SemiBold
-                    ),
-                    color = MindfulTheme.colors.textPrimary
+
+            Switch(
+                checked = value,
+                onCheckedChange = onToggle,
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = Color(0xFFD4AF37), // Gold
+                    checkedTrackColor = Color(0xFFD4AF37).copy(alpha = 0.5f),
+                    uncheckedThumbColor = Color(0xFF777C7C),
+                    uncheckedTrackColor = Color(0xFF777C7C).copy(alpha = 0.3f)
                 )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MindfulTheme.colors.textSecondary
-                )
-            }
-            
-            AnimatedSwitch(
-                checked = checked,
-                onCheckedChange = onCheckedChange
             )
         }
     }
 }
 
-@Composable
-private fun AnimatedSwitch(
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val colors = MindfulTheme.colors
-    val thumbOffset by animateDpAsState(
-        targetValue = if (checked) 24.dp else 0.dp,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-        label = "switchThumb"
-    )
-    
-    Box(
-        modifier = modifier
-            .width(52.dp)
-            .height(32.dp)
-            .background(
-                color = if (checked) colors.goldPrimary else colors.glassBackground,
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
-            )
-            .padding(4.dp)
-            .clickable { onCheckedChange(!checked) }
-    ) {
-        Box(
-            modifier = Modifier
-                .size(24.dp)
-                .offset(x = thumbOffset)
-                .background(
-                    color = if (checked) androidx.compose.ui.graphics.Color(0xFF121212) else colors.textSecondary,
-                    shape = androidx.compose.foundation.shape.CircleShape
-                )
-        )
-    }
-}
 
 @Composable
 private fun BrightnessSliderCard(
@@ -433,9 +359,6 @@ private fun BrightnessSliderCard(
     onBrightnessChange: (Float) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val colors = MindfulTheme.colors
-    val spacing = MindfulTheme.spacing
-    
     GlassCard(modifier = modifier.fillMaxWidth()) {
         Column {
             Row(
@@ -449,34 +372,34 @@ private fun BrightnessSliderCard(
                         style = MaterialTheme.typography.bodyLarge.copy(
                             fontWeight = FontWeight.SemiBold
                         ),
-                        color = colors.textPrimary
+                        color = Color(0xFFF5F5F5) // TextPrimary
                     )
                     Text(
                         text = "Adjusts brightness only for Focus Mode",
                         style = MaterialTheme.typography.bodySmall,
-                        color = colors.textSecondary
+                        color = Color(0xFFA7A9A9) // TextSecondary
                     )
                 }
-                
+
                 Text(
                     text = "${(brightness * 100).toInt()}%",
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold
                     ),
-                    color = colors.goldPrimary
+                    color = accentOrange
                 )
             }
-            
-            Spacer(Modifier.height(spacing.md))
-            
+
+            Spacer(Modifier.height(spacing.medium))
+
             Slider(
                 value = brightness,
                 onValueChange = onBrightnessChange,
                 modifier = Modifier.fillMaxWidth(),
                 colors = SliderDefaults.colors(
-                    thumbColor = colors.goldPrimary,
-                    activeTrackColor = colors.goldPrimary,
-                    inactiveTrackColor = colors.glassBackground
+                    thumbColor = accentOrange,
+                    activeTrackColor = accentOrange,
+                    inactiveTrackColor = surfaceCard.copy(alpha = 0.6f)
                 )
             )
         }
@@ -491,38 +414,38 @@ private fun PermissionCard(
     GlassCard(
         modifier = modifier.fillMaxWidth(),
         bloom = true,
-        bloomIntensity = 0.5f
+        bloomIntensity = 0.08f
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(
                 imageVector = Icons.Default.Warning,
                 contentDescription = null,
-                tint = MindfulTheme.colors.warning,
+                tint = accentOrange,
                 modifier = Modifier.size(48.dp)
             )
-            
-            Spacer(Modifier.height(MindfulTheme.spacing.md))
-            
+
+            Spacer(Modifier.height(spacing.medium))
+
             Text(
                 text = "Permission Required",
                 style = MaterialTheme.typography.titleLarge.copy(
                     fontWeight = FontWeight.SemiBold
                 ),
-                color = MindfulTheme.colors.textPrimary,
+                color = Color(0xFFF5F5F5), // TextPrimary
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
-            
-            Spacer(Modifier.height(MindfulTheme.spacing.sm))
-            
+
+            Spacer(Modifier.height(spacing.small))
+
             Text(
                 text = "Focus Mode needs permission to display over other apps",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MindfulTheme.colors.textSecondary,
+                color = Color(0xFFA7A9A9), // TextSecondary
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
-            
-            Spacer(Modifier.height(MindfulTheme.spacing.lg))
-            
+
+            Spacer(Modifier.height(spacing.large))
+
             GlassButton(
                 text = "Grant Permission",
                 onClick = onRequestPermission,
@@ -530,5 +453,15 @@ private fun PermissionCard(
                 modifier = Modifier.fillMaxWidth()
             )
         }
+    }
+}
+
+class SettingsViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(SettingsViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return SettingsViewModel(context) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

@@ -2,8 +2,6 @@ package com.example.mindfulgrowth.ui.components
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -13,11 +11,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.example.mindfulgrowth.ui.theme.MindfulTheme
+import com.example.mindfulgrowth.ui.theme.accentBlue
+import com.example.mindfulgrowth.ui.theme.accentOrange
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -25,7 +22,7 @@ import kotlin.math.sin
 fun TreeGrowingLoader(
     modifier: Modifier = Modifier,
     loaderSize: Dp = 64.dp,
-    color: Color = MindfulTheme.colors.greenAccent
+    color: Color = accentBlue
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "treeGrowing")
 
@@ -78,7 +75,7 @@ fun TreeGrowingLoader(
 fun CircularGlowLoader(
     modifier: Modifier = Modifier,
     size: Dp = 48.dp,
-    color: Color = MindfulTheme.colors.goldPrimary
+    color: Color = accentOrange
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "circularGlow")
 

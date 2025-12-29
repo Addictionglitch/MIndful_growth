@@ -1,30 +1,29 @@
 package com.example.mindfulgrowth.ui.components
 
-import android.graphics.BlurMaskFilter
 import android.os.Build
+import android.graphics.RenderEffect
+import android.graphics.Shader
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalDensity
+import kotlin.math.min
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.example.mindfulgrowth.ui.theme.MindfulTheme
-import kotlin.math.pow
-import androidx.compose.ui.graphics.RenderEffect
-import androidx.compose.ui.graphics.BlurEffect
-import androidx.compose.ui.graphics.TileMode
+import com.example.mindfulgrowth.ui.theme.accentOrange
+import com.example.mindfulgrowth.ui.theme.spacing
+import com.example.mindfulgrowth.ui.theme.surfaceCard
 
 /**
  * Premium glass morphism card with blur, bloom, and hover effects
@@ -33,32 +32,31 @@ import androidx.compose.ui.graphics.TileMode
 fun GlassCard(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
-    cornerRadius: Dp = MindfulTheme.shapes.large,
+    cornerRadius: Dp = 16.dp,
     blur: Boolean = true,
-    blurRadius: Dp = 20.dp,
+    blurRadius: Dp = 2.dp,             // subtle glass blur (max 2.dp)
     bloom: Boolean = true,
-    bloomIntensity: Float = 0.3f,
-    elevation: Dp = MindfulTheme.elevation.sm,
-    contentPadding: PaddingValues = PaddingValues(MindfulTheme.spacing.md),
+    bloomIntensity: Float = 0.06f,     // very subtle bloom by default
+    contentPadding: PaddingValues = PaddingValues(spacing.medium),
     content: @Composable BoxScope.() -> Unit
 ) {
-    val colors = MindfulTheme.colors
     val shape = RoundedCornerShape(cornerRadius)
-    
+
     // Hover state animation
     var isPressed by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.98f else 1f,
+        // faster, less bouncy press animation
         animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMedium
         ),
         label = "cardScale"
     )
-    
+
     val glowAlpha by animateFloatAsState(
         targetValue = if (isPressed) 0.6f else bloomIntensity,
-        animationSpec = tween(MindfulTheme.animations.fast),
+        animationSpec = tween(160),
         label = "glowAlpha"
     )
 
@@ -67,56 +65,44 @@ fun GlassCard(
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
-                
-                // Apply blur on Android 12+
-                if (blur && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    renderEffect = BlurEffect(
-                        blurRadius.toPx(),
-                        blurRadius.toPx(),
-                        TileMode.Clamp
-                    )
-                }
             }
             .then(
+                // Lightweight bloom: avoid native mask filters entirely to prevent large smeared artifacts.
                 if (bloom) {
-                    Modifier.drawBehind {                        // Outer glow (bloom effect)
-                        drawIntoCanvas { canvas ->
-                            val paint = Paint().asFrameworkPaint().apply {
-                                color = colors.bloomGlow.toArgb()
-                                maskFilter = BlurMaskFilter(
-                                    32.dp.toPx(),
-                                    BlurMaskFilter.Blur.NORMAL
-                                )
-                            }
-                            
-                            canvas.nativeCanvas.drawRoundRect(
-                                -8.dp.toPx(),
-                                -8.dp.toPx(),
-                                size.width + 8.dp.toPx(),
-                                size.height + 8.dp.toPx(),
-                                cornerRadius.toPx(),
-                                cornerRadius.toPx(),
-                                paint
-                            )
-                        }
-                        
-                        // Inner glow
+                    Modifier.drawBehind {
+                        // Only draw when visible
+                        if (glowAlpha <= 0.02f && !isPressed) return@drawBehind
+
+                        // Subtle vertical gradient overlay for warm tint
                         drawRoundRect(
-                            color = colors.bloomGlow.copy(alpha = glowAlpha),
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    accentOrange.copy(alpha = glowAlpha * 0.06f),
+                                    Color.Transparent
+                                )
+                            ),
                             size = size,
-                            cornerRadius = androidx.compose.ui.geometry.CornerRadius(cornerRadius.toPx())
+                            cornerRadius = CornerRadius(cornerRadius.toPx())
+                        )
+
+                        // Inner tint to give warm accent
+                        drawRoundRect(
+                            color = accentOrange.copy(alpha = glowAlpha * 0.12f),
+                            size = size,
+                            cornerRadius = CornerRadius(cornerRadius.toPx())
                         )
                     }
                 } else Modifier
             )
             .clip(shape)
-            .background(colors.glassBackground)
+            // We will render the blurred background as a separate layer inside the card to avoid
+            // blurring child content. The actual background color/texture will be drawn below.
             .border(
                 width = 1.dp,
                 brush = Brush.verticalGradient(
                     colors = listOf(
-                        colors.glassBorder.copy(alpha = 0.8f),
-                        colors.glassBorder.copy(alpha = 0.3f)
+                        surfaceCard.copy(alpha = 0.8f),
+                        surfaceCard.copy(alpha = 0.3f)
                     )
                 ),
                 shape = shape
@@ -135,28 +121,54 @@ fun GlassCard(
                     }
                 } else Modifier
             )
-    ) {
-        // Top highlight stripe
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(
-                    Brush.horizontalGradient(
-                        colors = listOf(
-                            Color.Transparent,
-                            colors.glassHighlight,
-                            Color.Transparent
-                        )
+     ) {
+        // Background layer: blurred glass + tint. This is drawn before content so children stay sharp.
+        if (blur) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .clip(shape)
+            ) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    Box(modifier = Modifier
+                        .matchParentSize()
+                        .graphicsLayer {
+                            val r = RenderEffect.createBlurEffect(
+                                blurRadius.toPx(), blurRadius.toPx(), Shader.TileMode.CLAMP
+                            )
+                            renderEffect = r.asComposeRenderEffect()
+                        }
                     )
+                }
+
+                // Glass tint overlay
+                Box(modifier = Modifier
+                    .matchParentSize()
+                    .background(surfaceCard)
                 )
-        )
-        
-        Box(
-            modifier = Modifier.padding(contentPadding),
-            content = content
-        )
-    }
+            }
+        }
+         // Top highlight stripe
+         Box(
+             modifier = Modifier
+                 .fillMaxWidth()
+                 .height(1.dp)
+                 .background(
+                     Brush.horizontalGradient(
+                         colors = listOf(
+                             Color.Transparent,
+                             Color.White.copy(alpha = 0.1f),
+                             Color.Transparent
+                         )
+                     )
+                 )
+         )
+
+         Box(
+             modifier = Modifier.padding(contentPadding),
+             content = content
+         )
+     }
 }
 
 /**
@@ -171,12 +183,12 @@ fun GlassCardCompact(
     GlassCard(
         modifier = modifier.height(72.dp),
         onClick = onClick,
-        cornerRadius = MindfulTheme.shapes.medium,
+        cornerRadius = 8.dp,
         blur = false,
         bloom = false,
         contentPadding = PaddingValues(
-            horizontal = MindfulTheme.spacing.md,
-            vertical = MindfulTheme.spacing.sm
+            horizontal = spacing.medium,
+            vertical = spacing.small
         )
     ) {
         Row(

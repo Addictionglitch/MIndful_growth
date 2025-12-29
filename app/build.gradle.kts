@@ -106,6 +106,7 @@ dependencies {
     
     // Compose Extensions
     implementation("androidx.compose.material:material-icons-extended:1.5.4")
+    implementation("androidx.compose.ui:ui-text-google-fonts:1.7.0")
     
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")

@@ -13,7 +13,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.mindfulgrowth.ui.theme.MindfulTheme
+import com.example.mindfulgrowth.ui.theme.accentBlue
+import com.example.mindfulgrowth.ui.theme.accentOrange
+import com.example.mindfulgrowth.ui.theme.accentPurple
+import com.example.mindfulgrowth.ui.theme.spacing
 import kotlinx.coroutines.delay
 
 enum class SnackbarType {
@@ -33,14 +36,14 @@ fun CustomSnackbarHost(
     modifier: Modifier = Modifier
 ) {
     val visible = snackbarData != null
-    
+
     LaunchedEffect(snackbarData) {
         if (snackbarData != null) {
             delay(snackbarData.duration)
             onDismiss()
         }
     }
-    
+
     AnimatedVisibility(
         visible = visible,
         enter = slideInVertically(
@@ -69,21 +72,34 @@ private fun CustomSnackbar(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val colors = MindfulTheme.colors
-    
-    val (icon, iconColor) = when (type) {
-        SnackbarType.SUCCESS -> Icons.Default.CheckCircle to colors.success
-        SnackbarType.ERROR -> Icons.Default.Error to colors.error
-        SnackbarType.WARNING -> Icons.Default.Warning to colors.warning
-        SnackbarType.INFO -> Icons.Default.Info to colors.goldPrimary
+    val icon: ImageVector
+    val iconColor: Color
+
+    when (type) {
+        SnackbarType.SUCCESS -> {
+            icon = Icons.Default.CheckCircle
+            iconColor = accentBlue
+        }
+        SnackbarType.ERROR -> {
+            icon = Icons.Default.Error
+            iconColor = accentOrange
+        }
+        SnackbarType.WARNING -> {
+            icon = Icons.Default.Warning
+            iconColor = accentOrange
+        }
+        SnackbarType.INFO -> {
+            icon = Icons.Default.Info
+            iconColor = accentPurple
+        }
     }
-    
+
     GlassCard(
         modifier = modifier
             .fillMaxWidth()
-            .padding(MindfulTheme.spacing.md),
+            .padding(spacing.medium),
         bloom = true,
-        bloomIntensity = 0.4f
+        bloomIntensity = 0.08f
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -92,7 +108,7 @@ private fun CustomSnackbar(
         ) {
             Row(
                 modifier = Modifier.weight(1f),
-                horizontalArrangement = Arrangement.spacedBy(MindfulTheme.spacing.sm),
+                horizontalArrangement = Arrangement.spacedBy(spacing.small),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
@@ -101,21 +117,21 @@ private fun CustomSnackbar(
                     tint = iconColor,
                     modifier = Modifier.size(24.dp)
                 )
-                
+
                 Text(
                     text = message,
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontWeight = FontWeight.Medium
                     ),
-                    color = colors.textPrimary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
-            
+
             IconButton(onClick = onDismiss) {
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = "Dismiss",
-                    tint = colors.textSecondary,
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -127,10 +143,10 @@ private fun CustomSnackbar(
 @Composable
 fun ScreenWithSnackbar() {
     var snackbarData by remember { mutableStateOf<SnackbarData?>(null) }
-    
+
     Box(modifier = Modifier.fillMaxSize()) {
         // Your screen content
-        
+
         // Snackbar at top
         CustomSnackbarHost(
             snackbarData = snackbarData,
@@ -138,7 +154,7 @@ fun ScreenWithSnackbar() {
             modifier = Modifier.align(Alignment.TopCenter)
         )
     }
-    
+
     // Trigger snackbar:
     // snackbarData = SnackbarData("Tree purchased!", SnackbarType.SUCCESS)
 }

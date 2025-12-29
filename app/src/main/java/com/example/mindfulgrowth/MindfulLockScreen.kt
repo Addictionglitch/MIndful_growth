@@ -28,9 +28,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.Collections
-
-class MindfulLockScreen
 
 // --- MAIN ENTRY POINT ---
 @Composable
@@ -198,28 +195,25 @@ fun FrostedGlassCard(
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(30.dp))
-            .graphicsLayer {
-                // NATIVE BLUR (Only works on Android 12 / API 31+)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    val blur = RenderEffect.createBlurEffect(
-                        30f, 30f, Shader.TileMode.MIRROR
-                    )
-                    renderEffect = blur.asComposeRenderEffect()
-                }
-                // Fallback for older phones: Just Alpha (handled below)
-            }
-            .background(Color.White.copy(alpha = 0.1f)) // The "Glass" tint
+            .background(Color.White.copy(alpha = 0.06f)) // subtle tint
             .border(
                 width = 1.dp,
                 brush = Brush.verticalGradient(
                     listOf(
-                        Color.White.copy(alpha = 0.4f), // Top highlight
-                        Color.White.copy(alpha = 0.1f)  // Bottom fade
+                        Color.White.copy(alpha = 0.25f),
+                        Color.White.copy(alpha = 0.06f)
                     )
                 ),
                 shape = RoundedCornerShape(30.dp)
             )
     ) {
+        // Apply a very small native blur only to the background layer to preserve content sharpness
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            Box(modifier = Modifier.matchParentSize().graphicsLayer {
+                val blur = RenderEffect.createBlurEffect(4f, 4f, Shader.TileMode.CLAMP)
+                renderEffect = blur.asComposeRenderEffect()
+            })
+        }
         content()
     }
 }

@@ -9,12 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.translate
-import com.example.mindfulgrowth.ui.theme.MindfulTheme
-import kotlin.math.cos
-import kotlin.math.sin
+import com.example.mindfulgrowth.ui.theme.accentOrange
+import com.example.mindfulgrowth.ui.theme.surfaceCard
 import kotlin.random.Random
 
 /**
@@ -24,7 +20,7 @@ import kotlin.random.Random
 fun FloatingParticles(
     modifier: Modifier = Modifier,
     particleCount: Int = 30,
-    color: Color = MindfulTheme.colors.goldPrimary.copy(alpha = 0.1f)
+    color: Color = accentOrange.copy(alpha = 0.1f)
 ) {
     val particles = remember {
         List(particleCount) {
@@ -37,7 +33,7 @@ fun FloatingParticles(
             )
         }
     }
-    
+
     val infiniteTransition = rememberInfiniteTransition(label = "particles")
     val time by infiniteTransition.animateFloat(
         initialValue = 0f,
@@ -48,12 +44,12 @@ fun FloatingParticles(
         ),
         label = "particleTime"
     )
-    
+
     Canvas(modifier = modifier.fillMaxSize()) {
         particles.forEach { particle ->
             val x = ((particle.x + particle.speedX * time * 10000) % 1f) * size.width
             val y = ((particle.y + particle.speedY * time * 10000) % 1f) * size.height
-            
+
             drawCircle(
                 color = color,
                 radius = particle.size,
@@ -75,10 +71,7 @@ private data class Particle(
  * Shimmer loading effect for cards
  */
 @Composable
-fun ShimmerEffect(
-    modifier: Modifier = Modifier
-) {
-    val colors = MindfulTheme.colors
+fun ShimmerEffect(modifier: Modifier = Modifier) {
     val infiniteTransition = rememberInfiniteTransition(label = "shimmer")
     val offset by infiniteTransition.animateFloat(
         initialValue = -1f,
@@ -89,16 +82,16 @@ fun ShimmerEffect(
         ),
         label = "shimmerOffset"
     )
-    
+
     Box(modifier = modifier) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             val shimmerX = size.width * offset
             drawRect(
                 brush = Brush.horizontalGradient(
                     colors = listOf(
-                        colors.shimmer.copy(alpha = 0f),
-                        colors.shimmer,
-                        colors.shimmer.copy(alpha = 0f)
+                        surfaceCard.copy(alpha = 0f),
+                        surfaceCard,
+                        surfaceCard.copy(alpha = 0f)
                     ),
                     startX = shimmerX - 200f,
                     endX = shimmerX + 200f
@@ -113,7 +106,7 @@ fun ShimmerEffect(
  */
 @Composable
 fun PulsingGlow(
-    color: Color = MindfulTheme.colors.goldPrimary,
+    color: Color = accentOrange,
     modifier: Modifier = Modifier
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
@@ -126,7 +119,7 @@ fun PulsingGlow(
         ),
         label = "pulseAlpha"
     )
-    
+
     Canvas(modifier = modifier.fillMaxSize()) {
         drawCircle(
             color = color.copy(alpha = alpha),

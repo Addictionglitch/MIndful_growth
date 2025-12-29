@@ -2,8 +2,7 @@ package com.example.mindfulgrowth.ui.components
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -15,7 +14,7 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
-import com.example.mindfulgrowth.ui.theme.MindfulTheme
+import com.example.mindfulgrowth.ui.theme.spacing
 import kotlinx.coroutines.delay
 
 @Composable
@@ -33,7 +32,9 @@ fun TooltipPopup(
             onDismiss()
         }
     }
-    
+    val mediumSpacing = spacing.medium
+    val smallSpacing = spacing.small
+
     AnimatedVisibility(
         visible = visible,
         enter = fadeIn() + scaleIn(
@@ -53,16 +54,16 @@ fun TooltipPopup(
         ) {
             GlassCard(
                 modifier = modifier,
-                cornerRadius = MindfulTheme.shapes.small,
+                cornerRadius = 4.dp,
                 contentPadding = PaddingValues(
-                    horizontal = 12.dp,
-                    vertical = 8.dp
+                    horizontal = mediumSpacing,
+                    vertical = smallSpacing
                 )
             ) {
                 Text(
                     text = text,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MindfulTheme.colors.textPrimary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
         }

@@ -47,13 +47,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.mindfulgrowth.ui.theme.MindfulTheme
+import com.example.mindfulgrowth.ui.theme.accentBlue
+import com.example.mindfulgrowth.ui.theme.accentOrange
+import com.example.mindfulgrowth.ui.theme.spacing
+import com.example.mindfulgrowth.ui.theme.surfaceCard
 
 enum class GlassButtonStyle {
-    PRIMARY,    // Gold filled
-    SECONDARY,  // Green filled
-    OUTLINED,   // Transparent with border
-    GLASS       // Full glass effect
+    PRIMARY,
+    SECONDARY,
+    OUTLINED,
+    GLASS
 }
 
 @Composable
@@ -65,54 +68,46 @@ fun GlassButton(
     icon: ImageVector? = null,
     enabled: Boolean = true,
     isLoading: Boolean = false,
-    cornerRadius: Dp = MindfulTheme.shapes.medium
+    cornerRadius: Dp = 12.dp // Default corner radius
 ) {
-    val colors = MindfulTheme.colors
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    
-    // Press animation
+    val largeSpacing = spacing.large
+    val smallSpacing = spacing.small
+
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.96f else 1f,
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
         label = "buttonScale"
     )
-    
-    // Shimmer effect for PRIMARY style
-    val infiniteTransition = rememberInfiniteTransition(label = "shimmer")
-    val shimmerOffset by infiniteTransition.animateFloat(
-        initialValue = -1f,
-        targetValue = 2f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "shimmerOffset"
-    )
-    
+
     val shape = RoundedCornerShape(cornerRadius)
-    
-    val (bgColor, contentColor, borderColor) = when (style) {
-        GlassButtonStyle.PRIMARY -> Triple(
-            colors.goldPrimary.copy(alpha = if (enabled) 1f else 0.5f),
-            Color(0xFF121212),
-            Color.Transparent
-        )
-        GlassButtonStyle.SECONDARY -> Triple(
-            colors.greenAccent.copy(alpha = if (enabled) 1f else 0.5f),
-            Color.White,
-            Color.Transparent
-        )
-        GlassButtonStyle.OUTLINED -> Triple(
-            Color.Transparent,
-            colors.goldPrimary.copy(alpha = if (enabled) 1f else 0.5f),
-            colors.goldPrimary.copy(alpha = if (enabled) 1f else 0.3f)
-        )
-        GlassButtonStyle.GLASS -> Triple(
-            colors.glassBackground,
-            colors.textPrimary.copy(alpha = if (enabled) 1f else 0.5f),
-            colors.glassBorder
-        )
+
+    val bgColor: Color
+    val contentColor: Color
+    val borderColor: Color
+
+    when (style) {
+        GlassButtonStyle.PRIMARY -> {
+            bgColor = accentOrange.copy(alpha = if (enabled) 1f else 0.5f)
+            contentColor = Color.White
+            borderColor = Color.Transparent
+        }
+        GlassButtonStyle.SECONDARY -> {
+            bgColor = accentBlue.copy(alpha = if (enabled) 1f else 0.5f)
+            contentColor = Color.White
+            borderColor = Color.Transparent
+        }
+        GlassButtonStyle.OUTLINED -> {
+            bgColor = Color.Transparent
+            contentColor = accentOrange.copy(alpha = if (enabled) 1f else 0.5f)
+            borderColor = accentOrange.copy(alpha = if (enabled) 1f else 0.3f)
+        }
+        GlassButtonStyle.GLASS -> {
+            bgColor = surfaceCard
+            contentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = if (enabled) 1f else 0.5f)
+            borderColor = surfaceCard.copy(alpha = 0.6f)
+        }
     }
 
     Box(
@@ -123,30 +118,8 @@ fun GlassButton(
             }
             .height(56.dp)
             .clip(shape)
-            .then(
-                if (style == GlassButtonStyle.PRIMARY && enabled) {
-                    Modifier.drawBehind {                        // Animated shimmer overlay
-                        val shimmerX = size.width * shimmerOffset
-                        drawRect(
-                            brush = Brush.horizontalGradient(
-                                colors = listOf(
-                                    Color.Transparent,
-                                    Color.White.copy(alpha = 0.3f),
-                                    Color.Transparent
-                                ),
-                                startX = shimmerX - 100f,
-                                endX = shimmerX + 100f
-                            )
-                        )
-                    }
-                } else Modifier
-            )
             .background(bgColor)
-            .then(
-                if (borderColor != Color.Transparent) {
-                    Modifier.border(1.dp, borderColor, shape)
-                } else Modifier
-            )
+            .border(1.dp, borderColor, shape)
             .clickable(
                 onClick = onClick,
                 enabled = enabled && !isLoading,
@@ -154,7 +127,7 @@ fun GlassButton(
                 interactionSource = interactionSource,
                 indication = null
             )
-            .padding(horizontal = MindfulTheme.spacing.lg),
+            .padding(horizontal = largeSpacing),
         contentAlignment = Alignment.Center
     ) {
         if (isLoading) {
@@ -172,7 +145,7 @@ fun GlassButton(
                         tint = contentColor,
                         modifier = Modifier.size(20.dp)
                     )
-                    Spacer(Modifier.width(MindfulTheme.spacing.sm))
+                    Spacer(Modifier.width(smallSpacing))
                 }
                 Text(
                     text = text,
@@ -200,7 +173,7 @@ private fun LoadingIndicator(
         ),
         label = "loadingRotation"
     )
-    
+
     Box(
         modifier = modifier
             .size(24.dp)
@@ -221,9 +194,6 @@ private fun LoadingIndicator(
     )
 }
 
-/**
- * Segmented control for Settings (Tap/Double Tap selector)
- */
 @Composable
 fun GlassSegmentedControl(
     options: List<String>,
@@ -231,31 +201,29 @@ fun GlassSegmentedControl(
     onSelectionChange: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val colors = MindfulTheme.colors
     val animatedOffset by animateFloatAsState(
         targetValue = selectedIndex.toFloat(),
         animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy),
         label = "segmentOffset"
     )
-    
+
     Box(
         modifier = modifier
             .height(48.dp)
-            .clip(RoundedCornerShape(MindfulTheme.shapes.medium))
-            .background(colors.glassBackground)
-            .border(1.dp, colors.glassBorder, RoundedCornerShape(MindfulTheme.shapes.medium))
+            .clip(RoundedCornerShape(12.dp))
+            .background(surfaceCard)
+            .border(1.dp, surfaceCard.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
     ) {
-        // Animated selector background
         Box(
             modifier = Modifier
                 .fillMaxHeight()
                 .fillMaxWidth(1f / options.size)
                 .offset(x = (animatedOffset * (1f / options.size) * 100).dp * options.size)
                 .padding(4.dp)
-                .clip(RoundedCornerShape(MindfulTheme.shapes.small))
-                .background(colors.goldPrimary)
+                .clip(RoundedCornerShape(8.dp))
+                .background(accentOrange)
         )
-        
+
         Row(
             modifier = Modifier.fillMaxSize(),
             horizontalArrangement = Arrangement.SpaceEvenly
@@ -274,9 +242,9 @@ fun GlassSegmentedControl(
                             fontWeight = if (index == selectedIndex) FontWeight.Bold else FontWeight.Normal
                         ),
                         color = if (index == selectedIndex) {
-                            Color(0xFF121212)
+                            Color.White
                         } else {
-                            colors.textSecondary
+                            MaterialTheme.colorScheme.onSurface
                         }
                     )
                 }

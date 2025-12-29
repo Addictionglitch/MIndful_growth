@@ -7,15 +7,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import com.example.mindfulgrowth.ui.theme.MindfulTheme
+import com.example.mindfulgrowth.ui.theme.spacing
 
 @Composable
 fun ModalBottomSheet(
@@ -24,10 +23,10 @@ fun ModalBottomSheet(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val colors = MindfulTheme.colors
     var dragOffset by remember { mutableStateOf(0f) }
     val threshold = 200f
-    
+    val extraLargeSpacing = spacing.extraLarge
+
     AnimatedVisibility(
         visible = visible,
         enter = fadeIn() + slideInVertically(initialOffsetY = { it }),
@@ -36,7 +35,7 @@ fun ModalBottomSheet(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(colors.surfaceOverlay)
+                .background(Color.Black.copy(alpha = 0.6f)) // Scrim
                 .clickable(
                     onClick = onDismiss,
                     indication = null,
@@ -72,9 +71,9 @@ fun ModalBottomSheet(
                         indication = null,
                         interactionSource = remember { MutableInteractionSource() }
                     ),
-                cornerRadius = MindfulTheme.shapes.extraLarge,
+                cornerRadius = 28.dp,
                 bloom = true,
-                contentPadding = PaddingValues(MindfulTheme.spacing.xl)
+                contentPadding = PaddingValues(extraLargeSpacing)
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth(),

@@ -10,9 +10,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import com.example.mindfulgrowth.ui.theme.MindfulTheme
-import kotlinx.coroutines.delay
-import kotlin.math.abs
+import com.example.mindfulgrowth.ui.theme.accentOrange
 import kotlin.math.pow
 
 @Composable
@@ -24,10 +22,10 @@ fun PullToRefreshContainer(
 ) {
     var dragOffset by remember { mutableStateOf(0f) }
     var isReleased by remember { mutableStateOf(false) }
-    
+
     val threshold = 150f
     val maxDrag = 300f
-    
+
     // Animate drag offset back to 0
     val animatedOffset by animateFloatAsState(
         targetValue = if (isRefreshing || isReleased) 0f else dragOffset,
@@ -37,7 +35,7 @@ fun PullToRefreshContainer(
         ),
         label = "pullOffset"
     )
-    
+
     // Rotation animation while refreshing
     val infiniteTransition = rememberInfiniteTransition(label = "refresh")
     val rotation by infiniteTransition.animateFloat(
@@ -48,7 +46,7 @@ fun PullToRefreshContainer(
         ),
         label = "refreshRotation"
     )
-    
+
     Box(
         modifier = modifier
             .pointerInput(Unit) {
@@ -93,12 +91,12 @@ fun PullToRefreshContainer(
                     .rotate(if (isRefreshing) rotation else animatedOffset)
             ) {
                 PulsingGlow(
-                    color = MindfulTheme.colors.goldPrimary,
+                    color = accentOrange,
                     modifier = Modifier.size(40.dp)
                 )
             }
         }
-        
+
         // Content with offset
         Box(
             modifier = Modifier.graphicsLayer {
