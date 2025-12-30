@@ -153,13 +153,13 @@ fun CustomizeScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.7f))
+                .background(Color.Black.copy(alpha = 0.1f))
         )
 
         // --- MAIN GRID ---
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(top = 180.dp, start = 16.dp, end = 16.dp, bottom = 150.dp),
+            contentPadding = PaddingValues(top = 170.dp, start = 16.dp, end = 16.dp, bottom = 150.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier.fillMaxSize()
@@ -200,7 +200,7 @@ fun CustomizeScreen(
                 .drawBehind {
                     drawIntoCanvas { canvas ->
                         // FIX: Explicitly use Compose Paint
-                        val paint = androidx.compose.ui.graphics.Paint()
+                        val paint = Paint()
                         // FIX: Apply mask filter via framework paint
                         paint.asFrameworkPaint().maskFilter = BlurMaskFilter(300f, BlurMaskFilter.Blur.NORMAL)
                         // FIX: Draw using the Compose Canvas and Compose Paint
@@ -211,7 +211,7 @@ fun CustomizeScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 40.dp, start = 20.dp, end = 20.dp)
+                    .padding(top = 60.dp, start = 20.dp, end = 20.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -234,7 +234,7 @@ fun CustomizeScreen(
                     )
                 }
 
-                Spacer(Modifier.height(20.dp))
+                Spacer(Modifier.height(15.dp))
 
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -269,7 +269,7 @@ fun CustomizeScreen(
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 104.dp)
+                .padding(bottom = 102.dp)
         ) {
             AnimatedVisibility(
                 visible = showHint,
@@ -554,7 +554,7 @@ fun Modifier.neonGlow(
 ) = this.drawBehind {
     drawIntoCanvas { canvas ->
         // FIX: Explicitly use Compose Paint
-        val paint = androidx.compose.ui.graphics.Paint()
+        val paint = Paint()
         paint.color = color.copy(alpha = alpha)
 
         // FIX: Access framework paint correctly for effects
