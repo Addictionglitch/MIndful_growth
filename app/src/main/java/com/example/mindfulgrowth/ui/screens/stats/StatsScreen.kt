@@ -1,358 +1,505 @@
 package com.example.mindfulgrowth.ui.screens.stats
 
-import android.app.AppOpsManager
-import android.content.Context
-import android.content.Intent
-import android.graphics.Paint as AndroidPaint
-import android.graphics.Path
-import android.provider.Settings
+import android.graphics.BlurMaskFilter
+import android.graphics.Paint as NativePaint
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import com.example.mindfulgrowth.ui.components.GlassButton
-import com.example.mindfulgrowth.ui.components.GlassCard
-import com.example.mindfulgrowth.ui.components.GlassButtonStyle
-import com.example.mindfulgrowth.ui.theme.*
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
-@Composable
-fun StatsScreen(
-    modifier: Modifier = Modifier,
-    viewModel: StatsViewModel = viewModel()
+// --- DESIGN SYSTEM ---
+private val CrimsonCore = Color(0xFFFF0007)
+private val DeepCrimson = Color(0xFF2D0001)
+private val VoidBlack = Color(0xFF0A0F14)
+private val TextPrimary = Color(0xFFE8E8E8)
+private val TextSecondary = Color(0xFF9CA3AF)
+private val PixelFont = FontFamily.Monospace
+
+// --- STATE MANAGEMENT ---
+enum class StatsRange {
+    WEEK, MONTH, YEAR
+}
+
+data class StatsUiState(
+    val selectedRange: StatsRange = StatsRange.WEEK,
+    val totalTimeSaved: String = "4.2h",
+    val graphData: List<Float> = listOf(2f, 3.5f, 1.0f, 4.2f, 3.8f, 5.5f, 4.0f),
+    val treesGrown: Int = 148 // Example data
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-    val context = LocalContext.current
-
-    LaunchedEffect(Unit) {
-        val hasPermission = checkUsageStatsPermission(context)
-        viewModel.updatePermissionStatus(hasPermission)
-        if (hasPermission) {
-            viewModel.refreshData()
-        }
-    }
-
-    StatsScreenContent(
-        uiState = uiState,
-        onRequestPermission = { context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)) },
-        modifier = modifier
-    )
-}
-
-@Composable
-private fun StatsScreenContent(
-    uiState: StatsUiState,
-    onRequestPermission: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF021024), // DarkNavy top
-                        Color(0xFF052659)  // RichBlue bottom
-                    )
-                )
-            )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp)
-        ) {
-            if (!uiState.hasPermission) {
-                PermissionPrompt(onRequestPermission = onRequestPermission)
-            } else {
-                UsageLineChartCard(uiState.dailyUsageHours, uiState.dayLabels)
-                Spacer(Modifier.height(16.dp))
-                MetricsDonutCharts(uiState.treesGrown, uiState.forestProgress)
-                Spacer(Modifier.height(16.dp))
-                TotalFocusBarChart(uiState.dailyUsageHours)
-            }
-            Spacer(Modifier.height(100.dp)) // Padding for floating nav bar
-        }
-    }
-}
-
-@Composable
-private fun UsageLineChartCard(usageHours: List<Float>, dayLabels: List<String>) {
-    var selectedIndex by remember { mutableStateOf(usageHours.size - 1) }
-
-    GlassCard(
-        modifier = Modifier.fillMaxWidth(),
-        cornerRadius = 16.dp,
-        blur = true,
-        bloom = false,
-        contentPadding = PaddingValues(16.dp)
-    ) {
-        Column {
-            Text("DAILY USE", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp), color = Color(0xFFD4AF37))
-            Text("Last 7 days", style = MaterialTheme.typography.bodySmall, color = Color(0xFF777C7C))
-            Spacer(Modifier.height(24.dp))
-            UsageLineChart(usageHours, dayLabels, selectedIndex) { index -> selectedIndex = index }
-        }
-    }
-}
-
-@Composable
-private fun UsageLineChart(data: List<Float>, labels: List<String>, selectedIndex: Int, onSelect: (Int) -> Unit) {
-    val goldColor = GoldPrimary
-    val paint = remember {
-        AndroidPaint().apply { color = goldColor.toArgb() }
-    }
-
-    // Reuse a text paint (Android native Paint) to avoid reallocations per draw
-    val textPaint = remember {
-        AndroidPaint().apply {
-            color = android.graphics.Color.WHITE
-            isAntiAlias = true
-            textAlign = AndroidPaint.Align.CENTER
-        }
-    }
-
-    Canvas(modifier = Modifier
-        .fillMaxWidth()
-        .height(200.dp)
-        .pointerInput(Unit) {
-            detectTapGestures {
-                val xStep = size.width / (data.size - 1)
-                val index = (it.x / xStep).roundToInt().coerceIn(0, data.size - 1)
-                onSelect(index)
-            }
-        }
-    ) { 
-        val path = Path()
-        val xStep = size.width / (data.size - 1)
-        val maxVal = data.maxOrNull() ?: 1f
-
-        data.forEachIndexed { i, value ->
-            val x = i * xStep
-            val y = size.height * (1 - (value / maxVal))
-            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
-        }
-
-        drawIntoCanvas {
-            it.nativeCanvas.drawPath(path, paint)
-        }
-
-        val selectedX = selectedIndex * xStep
-        val selectedY = size.height * (1 - (data[selectedIndex] / maxVal))
-        drawCircle(color = goldColor, radius = 8.dp.toPx(), center = Offset(selectedX, selectedY))
-        drawCircle(color = Color.White, radius = 5.dp.toPx(), center = Offset(selectedX, selectedY))
-
-        // Draw labels under the chart (use labels parameter)
-        // Update text size each draw (dp -> px depends on density)
-        textPaint.textSize = 12.dp.toPx()
-        textPaint.alpha = (0.85f * 255).toInt()
-
-        labels.forEachIndexed { i, lbl ->
-            val x = i * xStep
-            val y = size.height + 18.dp.toPx()
-            drawContext.canvas.nativeCanvas.drawText(lbl, x, y, textPaint)
-        }
-    }
-}
-
-@Composable
-private fun MetricsDonutCharts(treesGrown: Int, goalProgress: Float) {
-    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-        GlassCard(modifier = Modifier.weight(1f).aspectRatio(1f), cornerRadius = 12.dp, blur = true, bloom = false, contentPadding = PaddingValues(12.dp)) {
-            DonutChart(title = "Trees Grown", value = treesGrown.toString(), progress = 0.75f, color = accentBlue)
-        }
-        GlassCard(modifier = Modifier.weight(1f).aspectRatio(1f), cornerRadius = 12.dp, blur = true, bloom = false, contentPadding = PaddingValues(12.dp)) {
-            DonutChart(title = "Goal Reached", value = "${(goalProgress * 100).toInt()}%", progress = goalProgress, color = accentOrange)
-        }
-    }
-}
-
-@Composable
-fun DonutChart(title: String, value: String, progress: Float, color: Color) {
-    val animatedProgress by animateFloatAsState(targetValue = progress, animationSpec = tween(300), label = "")
-
-    Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Box(contentAlignment = Alignment.Center, modifier = Modifier.weight(1f)) {
-            Canvas(modifier = Modifier.size(100.dp)) {
-                drawArc(
-                    color = color.copy(alpha = 0.2f),
-                    startAngle = -225f,
-                    sweepAngle = 270f,
-                    useCenter = false,
-                    style = Stroke(width = 20f, cap = StrokeCap.Round)
-                )
-                drawArc(
-                    color = color,
-                    startAngle = -225f,
-                    sweepAngle = 270f * animatedProgress,
-                    useCenter = false,
-                    style = Stroke(width = 20f, cap = StrokeCap.Round)
-                )
-            }
-            Text(text = value, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold), color = Color(0xFFF5F5F5))
-        }
-        Spacer(Modifier.height(8.dp))
-        Text(text = title, style = MaterialTheme.typography.bodyMedium, color = Color(0xFF777C7C))
-    }
-}
-
-@Composable
-private fun TotalFocusBarChart(data: List<Float>) {
-    GlassCard(modifier = Modifier.fillMaxWidth(), cornerRadius = 16.dp, blur = true, bloom = false, contentPadding = PaddingValues(16.dp)) {
-        Column {
-            Text("TOTAL FOCUS", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp), color = Color(0xFFD4AF37))
-            Spacer(Modifier.height(16.dp))
-            BarChart(data)
-        }
-    }
-}
-
-@Composable
-private fun BarChart(data: List<Float>) {
-    val brush = Brush.verticalGradient(listOf(accentBlue, accentPurple))
-    Canvas(modifier = Modifier.fillMaxWidth().height(150.dp)) {
-        val barWidth = size.width / (data.size * 2 - 1)
-        val maxVal = data.maxOrNull() ?: 1f
-        data.forEachIndexed { index, value ->
-            val barHeight = size.height * (value / maxVal)
-            drawRoundRect(
-                brush = brush,
-                topLeft = Offset(x = index * barWidth * 2, y = size.height - barHeight),
-                size = Size(barWidth, barHeight),
-                cornerRadius = CornerRadius(4.dp.toPx())
-            )
-        }
-    }
-}
-
-@Composable
-private fun PermissionPrompt(
-    onRequestPermission: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    GlassCard(
-        modifier = modifier.fillMaxWidth(),
-        cornerRadius = 12.dp,
-        blur = true,
-        bloom = false,
-        contentPadding = PaddingValues(16.dp)
-    ) {
-         Column(
-             horizontalAlignment = Alignment.CenterHorizontally,
-             modifier = Modifier.padding(16.dp)
-         ) {
-            Text(
-                text = "Usage Statistics Required",
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.SemiBold
-                ),
-                color = Color(0xFFF5F5F5)
-            )
-
-            Spacer(Modifier.height(8.dp))
-
-            Text(
-                text = "To track your screen time and show your growth, we need access to usage statistics.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF777C7C),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-            )
-
-            Spacer(Modifier.height(16.dp))
-
-            GlassButton(
-                text = "Grant Permission",
-                onClick = onRequestPermission,
-                style = GlassButtonStyle.PRIMARY,
-                modifier = Modifier.fillMaxWidth()
-            )
-         }
-     }
-}
-
-@Suppress("DEPRECATION")
-private fun checkUsageStatsPermission(context: Context): Boolean {
-    val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-    val mode = appOps.checkOpNoThrow(
-        AppOpsManager.OPSTR_GET_USAGE_STATS,
-        android.os.Process.myUid(),
-        context.packageName
-    )
-    return mode == AppOpsManager.MODE_ALLOWED
+    // 1 Forest = 24 Trees
+    val forestsGrown: Int get() = treesGrown / 24
 }
 
 class StatsViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(StatsUiState())
     val uiState: StateFlow<StatsUiState> = _uiState.asStateFlow()
 
-    fun refreshData() {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
-            delay(1000) // Simulate network/data fetch
-            // TODO: Load actual usage stats here
-            _uiState.value = _uiState.value.copy(
-                isLoading = false,
-                achievements = listOf(
-                    Achievement("early_riser", "Early Riser", 0, true),
-                    Achievement("7_day_streak", "7 Day Streak", 0, true),
-                    Achievement("master_gardener", "Master Gardener", 0, false)
-                )
-            )
+    fun setRange(range: StatsRange) {
+        // Mock data logic
+        val newData = when (range) {
+            StatsRange.WEEK -> listOf(2f, 3.5f, 1.0f, 4.2f, 3.8f, 5.5f, 4.0f)
+            StatsRange.MONTH -> listOf(3f, 5f, 2f, 4f, 6f, 5f, 7f, 6f, 4f, 5f, 3f, 4f)
+            StatsRange.YEAR -> listOf(20f, 45f, 30f, 50f, 60f, 55f, 70f, 65f, 50f, 60f, 40f, 55f)
         }
-    }
+        val newTotal = when (range) {
+            StatsRange.WEEK -> "4.2h"
+            StatsRange.MONTH -> "18.5h"
+            StatsRange.YEAR -> "210h"
+        }
+        val newTrees = when (range) {
+            StatsRange.WEEK -> 12
+            StatsRange.MONTH -> 58
+            StatsRange.YEAR -> 740
+        }
 
-    fun updatePermissionStatus(hasPermission: Boolean) {
-        _uiState.value = _uiState.value.copy(hasPermission = hasPermission)
+        _uiState.value = _uiState.value.copy(
+            selectedRange = range,
+            graphData = newData,
+            totalTimeSaved = newTotal,
+            treesGrown = newTrees
+        )
     }
 }
 
-data class StatsUiState(
-    val dailyUsageHours: List<Float> = listOf(2.5f, 3.2f, 1.8f, 4.1f, 2.9f, 3.5f, 2.1f),
-    val dayLabels: List<String> = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Today"),
-    val treesGrown: Int = 14,
-    val forestProgress: Float = 0.6f,
-    val achievements: List<Achievement> = emptyList(),
-    val isLoading: Boolean = false,
-    val hasPermission: Boolean = false
-)
+// --- MAIN SCREEN ---
+@Composable
+fun StatsScreen(
+    viewModel: StatsViewModel = viewModel()
+) {
+    val state by viewModel.uiState.collectAsState()
 
-data class Achievement(
-    val id: String,
-    val title: String,
-    val iconRes: Int,
-    val isUnlocked: Boolean
-)
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            // Ambient Cyberpunk Background
+            .background(
+                brush = Brush.radialGradient(
+                    colors = listOf(DeepCrimson, VoidBlack),
+                    center = Offset(500f, -200f),
+                    radius = 1800f
+                )
+            )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 60.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            // 1. HEADER
+            StatsTimeSelector(
+                currentRange = state.selectedRange,
+                onRangeSelected = { viewModel.setRange(it) }
+            )
+
+            // 2. TIME SAVED GRAPH
+            TimeSavedGraphCard(
+                totalTime = state.totalTimeSaved,
+                dataPoints = state.graphData
+            )
+
+            // 3. SPLIT GLASS FRAGMENTS (Trees & Forests)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Fragment 1: Trees
+                StatFragmentCard(
+                    title = "TREES_GROWN",
+                    value = "${state.treesGrown}",
+                    icon = Icons.Rounded.Park,
+                    modifier = Modifier.weight(1f)
+                )
+
+                // Fragment 2: Forests (Value / 24)
+                StatFragmentCard(
+                    title = "FORESTS_GROWN",
+                    value = "${state.forestsGrown}",
+                    icon = Icons.Rounded.Forest,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+// --- COMPONENTS ---
+
+@Composable
+fun StatFragmentCard(
+    title: String,
+    value: String,
+    icon: ImageVector,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .height(120.dp)
+            .neonGlow(CrimsonCore, radius = 30f, alpha = 0.1f)
+            .clip(RoundedCornerShape(20.dp))
+            .background(Color.Black.copy(alpha = 0.5f))
+            .border(
+                width = 1.dp,
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        Color.White.copy(alpha = 0.1f),
+                        Color.Transparent,
+                        CrimsonCore.copy(alpha = 0.2f)
+                    )
+                ),
+                shape = RoundedCornerShape(20.dp)
+            )
+            .padding(16.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            // Icon Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = CrimsonCore,
+                    modifier = Modifier.size(20.dp)
+                )
+                // Tiny decorative dot
+                Box(
+                    modifier = Modifier
+                        .size(6.dp)
+                        .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(50))
+                )
+            }
+
+            // Value & Title
+            Column {
+                Text(
+                    text = value,
+                    color = TextPrimary,
+                    fontSize = 28.sp,
+                    fontFamily = PixelFont,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = title,
+                    color = TextSecondary,
+                    fontSize = 10.sp,
+                    fontFamily = PixelFont,
+                    letterSpacing = 1.sp
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun TimeSavedGraphCard(
+    totalTime: String,
+    dataPoints: List<Float>
+) {
+    Box(
+        modifier = Modifier
+            .padding(horizontal = 24.dp)
+            .fillMaxWidth()
+            .height(280.dp)
+            .neonGlow(CrimsonCore, radius = 60f, alpha = 0.1f)
+            .clip(RoundedCornerShape(24.dp))
+            .background(Color.Black.copy(alpha = 0.6f))
+            .border(
+                width = 1.dp,
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        Color.White.copy(alpha = 0.1f),
+                        Color.Transparent,
+                        CrimsonCore.copy(alpha = 0.3f)
+                    )
+                ),
+                shape = RoundedCornerShape(24.dp)
+            )
+    ) {
+        Column(Modifier.padding(20.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "// TIME_RECLAIMED",
+                        color = TextSecondary,
+                        fontSize = 12.sp,
+                        fontFamily = PixelFont,
+                        letterSpacing = 1.sp
+                    )
+                    Text(
+                        text = totalTime,
+                        color = TextPrimary,
+                        fontSize = 32.sp,
+                        fontFamily = PixelFont,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .size(12.dp)
+                        .background(CrimsonCore, RoundedCornerShape(2.dp))
+                        .neonGlow(CrimsonCore, 10f)
+                )
+            }
+
+            Spacer(Modifier.height(24.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            ) {
+                SmoothLineGraph(dataPoints = dataPoints)
+            }
+        }
+    }
+}
+
+@Composable
+fun SmoothLineGraph(
+    dataPoints: List<Float>
+) {
+    var touchX by remember { mutableStateOf<Float?>(null) }
+
+    Canvas(
+        modifier = Modifier
+            .fillMaxSize()
+            .pointerInput(Unit) {
+                detectDragGestures(
+                    onDragEnd = { touchX = null },
+                    onDragCancel = { touchX = null }
+                ) { change, _ ->
+                    touchX = change.position.x
+                }
+            }
+    ) {
+        val width = size.width
+        val height = size.height
+        val maxVal = dataPoints.maxOrNull() ?: 1f
+        val points = dataPoints.mapIndexed { index, value ->
+            val x = index * (width / (dataPoints.size - 1))
+            val y = height - (value / maxVal * height)
+            Offset(x, y)
+        }
+
+        val path = Path()
+        if (points.isNotEmpty()) {
+            path.moveTo(points[0].x, points[0].y)
+            for (i in 0 until points.size - 1) {
+                val p1 = points[i]
+                val p2 = points[i + 1]
+                val cp1 = Offset((p1.x + p2.x) / 2, p1.y)
+                val cp2 = Offset((p1.x + p2.x) / 2, p2.y)
+                path.cubicTo(cp1.x, cp1.y, cp2.x, cp2.y, p2.x, p2.y)
+            }
+        }
+
+        val fillPath = Path()
+        fillPath.addPath(path)
+        fillPath.lineTo(width, height)
+        fillPath.lineTo(0f, height)
+        fillPath.close()
+
+        drawPath(
+            path = fillPath,
+            brush = Brush.verticalGradient(
+                colors = listOf(
+                    CrimsonCore.copy(alpha = 0.3f),
+                    Color.Transparent
+                ),
+                startY = 0f,
+                endY = height
+            )
+        )
+
+        drawPath(
+            path = path,
+            color = Color.White,
+            style = Stroke(width = 2.dp.toPx())
+        )
+        drawPath(
+            path = path,
+            color = CrimsonCore,
+            style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
+        )
+        drawPath(
+            path = path,
+            color = CrimsonCore.copy(alpha = 0.4f),
+            style = Stroke(width = 12.dp.toPx(), cap = StrokeCap.Round)
+        )
+
+        touchX?.let { tx ->
+            val step = width / (dataPoints.size - 1)
+            val index = (tx / step).roundToInt().coerceIn(0, dataPoints.size - 1)
+            val activePoint = points[index]
+
+            drawLine(
+                color = TextSecondary.copy(alpha = 0.5f),
+                start = Offset(activePoint.x, 0f),
+                end = Offset(activePoint.x, height),
+                strokeWidth = 1.dp.toPx(),
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f))
+            )
+
+            drawCircle(color = CrimsonCore, radius = 6.dp.toPx(), center = activePoint)
+            drawCircle(color = Color.White, radius = 3.dp.toPx(), center = activePoint)
+        }
+    }
+}
+
+@Composable
+fun StatsTimeSelector(
+    currentRange: StatsRange,
+    onRangeSelected: (StatsRange) -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .padding(horizontal = 24.dp)
+            .fillMaxWidth()
+            .height(56.dp)
+            .neonGlow(CrimsonCore, radius = 40f, alpha = 0.15f)
+            .clip(RoundedCornerShape(50))
+            .background(Color.Black.copy(alpha = 0.4f))
+            .border(
+                width = 1.dp,
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        Color.White.copy(alpha = 0.15f),
+                        Color.Transparent,
+                        Color.White.copy(alpha = 0.05f)
+                    )
+                ),
+                shape = RoundedCornerShape(50)
+            )
+            .padding(4.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxSize(),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            StatsRange.values().forEach { range ->
+                val isSelected = currentRange == range
+                GlassTabButton(
+                    text = range.name,
+                    isSelected = isSelected,
+                    modifier = Modifier.weight(1f),
+                    onClick = { onRangeSelected(range) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun GlassTabButton(
+    text: String,
+    isSelected: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    val backgroundColor by animateColorAsState(
+        targetValue = if (isSelected) CrimsonCore.copy(alpha = 0.2f) else Color.Transparent,
+        animationSpec = tween(300),
+        label = "bg"
+    )
+    val borderColor by animateColorAsState(
+        targetValue = if (isSelected) CrimsonCore.copy(alpha = 0.8f) else Color.Transparent,
+        animationSpec = tween(300),
+        label = "border"
+    )
+    val textColor by animateColorAsState(
+        targetValue = if (isSelected) CrimsonCore else TextSecondary,
+        animationSpec = tween(300),
+        label = "text"
+    )
+    val glowAlpha by animateFloatAsState(
+        targetValue = if (isSelected) 0.5f else 0f,
+        animationSpec = tween(300),
+        label = "glow"
+    )
+
+    Box(
+        modifier = modifier
+            .fillMaxHeight()
+            .clip(RoundedCornerShape(50))
+            .background(backgroundColor)
+            .border(1.dp, borderColor, RoundedCornerShape(50))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) { onClick() }
+            .neonGlow(CrimsonCore, radius = 25f, alpha = glowAlpha),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            fontFamily = PixelFont,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+            fontSize = 12.sp,
+            color = textColor,
+            letterSpacing = 1.sp
+        )
+    }
+}
+
+// --- UTILS ---
+
+fun Modifier.neonGlow(
+    color: Color,
+    radius: Float = 20f,
+    alpha: Float = 1f
+) = this.drawBehind {
+    drawIntoCanvas { canvas ->
+        val paint = androidx.compose.ui.graphics.Paint()
+        paint.color = color.copy(alpha = alpha)
+        paint.asFrameworkPaint().maskFilter = BlurMaskFilter(radius, BlurMaskFilter.Blur.NORMAL)
+        val center = Offset(size.width / 2, size.height / 2)
+        canvas.drawCircle(center, size.minDimension / 1.8f, paint)
+    }
+}

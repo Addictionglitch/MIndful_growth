@@ -1,80 +1,100 @@
 package com.example.mindfulgrowth.ui.theme
 
-import android.app.Activity
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.ReadOnlyComposable
-import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
-import androidx.core.view.WindowCompat
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 
-private val DarkColorScheme = darkColorScheme(
-    primary = DarkNavy,
-    secondary = RichBlue,
-    tertiary = accentBlue,
-    background = BackgroundColor,
-    surface = SurfaceColor,
-    onPrimary = TextPrimary,
-    onSecondary = TextPrimary,
-    onTertiary = TextPrimary,
-    onBackground = TextPrimary,
-    onSurface = TextPrimary,
+// 1. Define Colors
+@Immutable
+data class MindfulColors(
+    val goldPrimary: Color = Color(0xFFC69C6D),
+    val goldLight: Color = Color(0xFFD4B896),
+    val goldDark: Color = Color(0xFFB88A5A),
+    val greenAccent: Color = Color(0xFF5B8C5A),
+
+    // Glass / Dark UI Colors
+    val glassBackground: Color = Color(0x26FFFFFF),
+    val glassBorder: Color = Color(0x33FFFFFF),
+
+    // Gradients
+    val gradientStart: Color = Color(0xFF2C211B),
+    val gradientMid: Color = Color(0xFF221E1C), // Added this
+    val gradientEnd: Color = Color(0xFF1A1F1F),
+
+    val surfaceCard: Color = Color(0xFF1E1E1E),
+    val textPrimary: Color = Color(0xFFEADDCD),
+    val textSecondary: Color = Color(0xFF9D8D7E),
+
+    // Status
+    val warning: Color = Color(0xFFFFA726) // Added this
 )
 
-private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
+// 2. Define Spacing
+@Immutable
+data class MindfulSpacing(
+    val sm: Dp = 8.dp,
+    val md: Dp = 16.dp,
+    val lg: Dp = 24.dp,
+    val xl: Dp = 32.dp // Added this
 )
 
+// 3. Define Shapes
+@Immutable
+data class MindfulShapes(
+    val small: Dp = 8.dp,
+    val medium: Dp = 16.dp,
+    val large: Dp = 24.dp,
+    val full: Dp = 999.dp
+)
+
+// 4. Create CompositionLocals
+val LocalMindfulColors = staticCompositionLocalOf { MindfulColors() }
+val LocalMindfulSpacing = staticCompositionLocalOf { MindfulSpacing() }
+val LocalMindfulShapes = staticCompositionLocalOf { MindfulShapes() }
+
+// 5. The Main Theme Object
+object MindfulTheme {
+    val colors: MindfulColors
+        @Composable get() = LocalMindfulColors.current
+
+    val spacing: MindfulSpacing
+        @Composable get() = LocalMindfulSpacing.current
+
+    val shapes: MindfulShapes
+        @Composable get() = LocalMindfulShapes.current
+}
+
+// 6. The Theme Composable Function
 @Composable
 fun MindfulGrowthTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
+    val mindfulColors = MindfulColors()
 
-    val view = LocalView.current
-    if (!view.isInEditMode) {
-        SideEffect {
-            val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.primary.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkTheme
-        }
-    }
+    val colorScheme = darkColorScheme(
+        primary = mindfulColors.goldPrimary,
+        background = mindfulColors.gradientEnd,
+        surface = mindfulColors.surfaceCard,
+        onPrimary = Color.Black,
+        onBackground = mindfulColors.textPrimary,
+        onSurface = mindfulColors.textPrimary
+    )
 
     CompositionLocalProvider(
-        LocalSpacing provides Spacing(),
-        LocalElevation provides Elevation()
+        LocalMindfulColors provides mindfulColors,
+        LocalMindfulSpacing provides MindfulSpacing(),
+        LocalMindfulShapes provides MindfulShapes()
     ) {
         MaterialTheme(
             colorScheme = colorScheme,
-            typography = typography,
-            shapes = Shapes,
             content = content
         )
     }
 }
-
-val MaterialTheme.elevation: Elevation
-    @Composable
-    @ReadOnlyComposable
-    get() = LocalElevation.current

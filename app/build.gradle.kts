@@ -77,6 +77,7 @@ dependencies {
     implementation("androidx.compose.foundation:foundation:1.7.0")
     implementation("androidx.compose.material3:material3:1.2.0")
     implementation("androidx.compose.material:material:1.7.0")
+    implementation("androidx.compose.material:material-icons-extended:1.5.4") // Or your current Compose version
     
     // Compose unit conversion (sp, dp)
     implementation("androidx.compose.ui:ui-unit:1.7.0")

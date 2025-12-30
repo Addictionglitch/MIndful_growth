@@ -2,51 +2,70 @@ package com.example.mindfulgrowth.ui.screens.settings
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.BlurMaskFilter
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
-import androidx.compose.animation.*
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
-import com.example.mindfulgrowth.service.ScreenStateService
-import com.example.mindfulgrowth.ui.components.*
-import com.example.mindfulgrowth.ui.navigation.BottomNavigationBar
-import com.example.mindfulgrowth.ui.theme.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import com.example.mindfulgrowth.R
 
-// DataStore Extension
+// --- COLORS (Crimson Glass Palette) ---
+private val CrimsonCore = Color(0xFFFF0007)
+private val DeepCrimson = Color(0xFF2D0001)
+private val VoidBlack = Color(0xFF050505)
+private val TextPrimary = Color.White
+private val TextSecondary = Color.White.copy(alpha = 0.7f)
+private val IconAccent = CrimsonCore
+
+// --- TYPOGRAPHY ---
+private val PixelFont = FontFamily.Monospace
+
+// --- LOGIC SECTION ---
+
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "mindful_settings")
 
 object PreferencesKeys {
@@ -55,15 +74,16 @@ object PreferencesKeys {
     val BW_MODE = booleanPreferencesKey("bw_mode")
     val BRIGHTNESS = floatPreferencesKey("brightness")
     val WAKE_GESTURE = intPreferencesKey("wake_gesture")
+    val RAISE_TO_WAKE = booleanPreferencesKey("raise_to_wake")
 }
 
-// ViewModel
 data class SettingsUiState(
     val aodEnabled: Boolean = true,
     val clockEnabled: Boolean = true,
     val bwMode: Boolean = false,
     val brightness: Float = 0.5f,
     val wakeGesture: Int = 0,
+    val raiseToWakeEnabled: Boolean = false,
     val hasOverlayPermission: Boolean = false,
     val isServiceRunning: Boolean = false
 )
@@ -86,7 +106,8 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
                     clockEnabled = prefs[PreferencesKeys.CLOCK_ENABLED] ?: true,
                     bwMode = prefs[PreferencesKeys.BW_MODE] ?: false,
                     brightness = prefs[PreferencesKeys.BRIGHTNESS] ?: 0.5f,
-                    wakeGesture = prefs[PreferencesKeys.WAKE_GESTURE] ?: 0
+                    wakeGesture = prefs[PreferencesKeys.WAKE_GESTURE] ?: 0,
+                    raiseToWakeEnabled = prefs[PreferencesKeys.RAISE_TO_WAKE] ?: false
                 )
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -97,371 +118,490 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
     private fun checkPermissions() {
         val hasOverlay = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             Settings.canDrawOverlays(context)
-        } else {
-            true
-        }
+        } else { true }
         _uiState.value = _uiState.value.copy(hasOverlayPermission = hasOverlay)
     }
 
     fun toggleAod(enabled: Boolean) {
-        viewModelScope.launch {
-            context.dataStore.edit { it[PreferencesKeys.AOD_ENABLED] = enabled }
-            _uiState.value = _uiState.value.copy(aodEnabled = enabled)
-        }
+        _uiState.value = _uiState.value.copy(aodEnabled = enabled)
+        saveBoolean(PreferencesKeys.AOD_ENABLED, enabled)
     }
-
     fun toggleClock(enabled: Boolean) {
-        viewModelScope.launch {
-            context.dataStore.edit { it[PreferencesKeys.CLOCK_ENABLED] = enabled }
-            _uiState.value = _uiState.value.copy(clockEnabled = enabled)
-        }
+        _uiState.value = _uiState.value.copy(clockEnabled = enabled)
+        saveBoolean(PreferencesKeys.CLOCK_ENABLED, enabled)
     }
-
     fun toggleBwMode(enabled: Boolean) {
-        viewModelScope.launch {
-            context.dataStore.edit { it[PreferencesKeys.BW_MODE] = enabled }
-            _uiState.value = _uiState.value.copy(bwMode = enabled)
-        }
+        _uiState.value = _uiState.value.copy(bwMode = enabled)
+        saveBoolean(PreferencesKeys.BW_MODE, enabled)
     }
-
     fun updateBrightness(brightness: Float) {
-        viewModelScope.launch {
-            context.dataStore.edit { it[PreferencesKeys.BRIGHTNESS] = brightness }
-            _uiState.value = _uiState.value.copy(brightness = brightness)
-        }
+        _uiState.value = _uiState.value.copy(brightness = brightness)
+        viewModelScope.launch { context.dataStore.edit { it[PreferencesKeys.BRIGHTNESS] = brightness } }
     }
 
     fun setWakeGesture(gesture: Int) {
-        viewModelScope.launch {
-            context.dataStore.edit { it[PreferencesKeys.WAKE_GESTURE] = gesture }
-            _uiState.value = _uiState.value.copy(wakeGesture = gesture)
-        }
+        _uiState.value = _uiState.value.copy(wakeGesture = gesture)
+        viewModelScope.launch { context.dataStore.edit { it[PreferencesKeys.WAKE_GESTURE] = gesture } }
     }
 
-    fun startFocusMode() {
-        if (_uiState.value.hasOverlayPermission) {
-            val intent = Intent(context, ScreenStateService::class.java)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(intent)
-            } else {
-                context.startService(intent)
-            }
-            _uiState.value = _uiState.value.copy(isServiceRunning = true)
-        }
+    fun toggleRaiseToWake(enabled: Boolean) {
+        _uiState.value = _uiState.value.copy(raiseToWakeEnabled = enabled)
+        saveBoolean(PreferencesKeys.RAISE_TO_WAKE, enabled)
+    }
+
+    private fun saveBoolean(key: Preferences.Key<Boolean>, value: Boolean) {
+        viewModelScope.launch { context.dataStore.edit { it[key] = value } }
     }
 
     fun requestOverlayPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val intent = Intent(
-                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                Uri.parse("package:${context.packageName}")
-            )
+            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${context.packageName}"))
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             context.startActivity(intent)
         }
     }
 }
 
-// Main Composable
-@OptIn(ExperimentalMaterial3Api::class)
+// --- UI SECTION ---
+
 @Composable
 fun SettingsScreen(
-    modifier: Modifier = Modifier,
-    navController: NavController
+    modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val viewModel: SettingsViewModel = viewModel(
-        factory = SettingsViewModelFactory(context)
-    )
+    val viewModel = remember { SettingsViewModel(context) }
     val uiState by viewModel.uiState.collectAsState()
 
-    Scaffold(
-        containerColor = Color(0xFF0F1111), // BackgroundColor (kept but content gets gradient)
-        topBar = { SettingsTopBar() },
-        bottomBar = { BottomNavigationBar(navController = navController) }
-    ) { paddingValues ->
-        LazyColumn(
-            modifier = modifier
+    Box(modifier = modifier.fillMaxSize()) {
+        // 1. Background Image
+        Image(
+            painter = painterResource(id = R.drawable.app_background),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+
+        // 2. Dark Scrim (For text readability)
+        Box(
+            modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .background(Color.Black.copy(alpha = 0.7f)) // Adjust alpha for brightness
+        )
+
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 20.dp),
+            contentPadding = PaddingValues(top = 60.dp, bottom = 120.dp),
+            verticalArrangement = Arrangement.spacedBy(28.dp)
+        ) {
+            // --- HEADER ---
+            item {
+                Text(
+                    text = "SYSTEM_CONFIG",
+                    style = MaterialTheme.typography.displaySmall,
+                    color = TextPrimary,
+                    fontFamily = PixelFont,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 2.sp,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+            }
+
+            // --- PERMISSION ALERT ---
+            if (!uiState.hasOverlayPermission) {
+                item {
+                    GlassCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        borderColor = CrimsonCore,
+                        glowAlpha = 0.4f
+                    ) {
+                        Column(Modifier.padding(20.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Rounded.Warning, null, tint = CrimsonCore)
+                                Spacer(Modifier.width(12.dp))
+                                Text("PERMISSION_REQUIRED", color = TextPrimary, fontWeight = FontWeight.Bold, fontFamily = PixelFont)
+                            }
+                            Spacer(Modifier.height(12.dp))
+                            Text(
+                                "Overlay access required for visual injection.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = TextSecondary,
+                                fontFamily = PixelFont
+                            )
+                            Spacer(Modifier.height(20.dp))
+                            GlassButton(
+                                text = "GRANT ACCESS",
+                                onClick = { viewModel.requestOverlayPermission() }
+                            )
+                        }
+                    }
+                }
+            }
+
+            // --- DISPLAY SECTION ---
+            item {
+                SettingsSectionTitle("VISUAL_ARRAY")
+                GlassCard {
+                    Column(
+                        modifier = Modifier.padding(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // AOD
+                        InnerGlassPanel {
+                            GlassToggleRow(
+                                title = "AOD PROTOCOL",
+                                icon = Icons.Rounded.Smartphone,
+                                isChecked = uiState.aodEnabled,
+                                onCheckedChange = { viewModel.toggleAod(it) }
+                            )
+                        }
+
+                        // Brightness
+                        InnerGlassPanel {
+                            Column(Modifier.padding(16.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        Icons.Rounded.Brightness6,
+                                        null,
+                                        tint = TextSecondary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(Modifier.width(12.dp))
+                                    Text("LUMINANCE", color = TextPrimary, fontSize = 14.sp, fontFamily = PixelFont)
+                                }
+                                Spacer(Modifier.height(16.dp))
+                                GlassSlider(
+                                    value = uiState.brightness,
+                                    onValueChange = { viewModel.updateBrightness(it) }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // --- BEHAVIOR SECTION ---
+            item {
+                SettingsSectionTitle("BEHAVIOR_MATRIX")
+                GlassCard {
+                    Column(
+                        modifier = Modifier.padding(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // Monochrome Mode
+                        InnerGlassPanel {
+                            GlassToggleRow(
+                                title = "MONOCHROME",
+                                subtitle = "Greyscale Overlay",
+                                icon = Icons.Rounded.FilterBAndW,
+                                isChecked = uiState.bwMode,
+                                onCheckedChange = { viewModel.toggleBwMode(it) }
+                            )
+                        }
+
+                        // Wake Gesture
+                        InnerGlassPanel {
+                            Column(Modifier.padding(16.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        Icons.Rounded.TouchApp,
+                                        null,
+                                        tint = TextSecondary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(Modifier.width(12.dp))
+                                    Text("WAKE TRIGGER", color = TextPrimary, fontSize = 14.sp, fontFamily = PixelFont)
+                                }
+                                Spacer(Modifier.height(16.dp))
+                                GlassSegmentedPicker(
+                                    options = listOf("NULL", "TAP", "DBL"),
+                                    selectedIndex = uiState.wakeGesture,
+                                    onOptionSelected = { viewModel.setWakeGesture(it) }
+                                )
+                            }
+                        }
+
+                        // Raise to Wake
+                        InnerGlassPanel {
+                            GlassToggleRow(
+                                title = "LIFT DETECT",
+                                subtitle = "Accelerometer",
+                                icon = Icons.Rounded.ScreenRotation,
+                                isChecked = uiState.raiseToWakeEnabled,
+                                onCheckedChange = { viewModel.toggleRaiseToWake(it) }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- SCROLL FADE GRADIENT ---
+        // A smooth fade at the bottom to blend content into the void
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .height(100.dp)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(Color.Transparent, VoidBlack)
+                    )
+                )
+        )
+    }
+}
+
+// --- REUSABLE COMPONENTS ---
+
+@Composable
+fun SettingsSectionTitle(title: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            modifier = Modifier
+                .size(width = 4.dp, height = 16.dp)
+                .background(CrimsonCore)
+        )
+        Spacer(Modifier.width(12.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelMedium,
+            color = TextSecondary,
+            fontFamily = PixelFont,
+            letterSpacing = 2.sp
+        )
+    }
+}
+
+/**
+ * The Main Glass Container.
+ * Features: Outer Glow (Shadow), Refractive Border, Gradient Surface.
+ */
+@Composable
+fun GlassCard(
+    modifier: Modifier = Modifier,
+    borderColor: Color? = null,
+    glowAlpha: Float = 0.15f,
+    content: @Composable BoxScope.() -> Unit
+) {
+    Box(
+        modifier = modifier
+            // 1. Outer Glow (Elevation)
+            .neonGlow(color = borderColor ?: CrimsonCore, radius = 40f, alpha = glowAlpha)
+            .clip(RoundedCornerShape(24.dp))
+    ) {
+        // 2. Base Dark Glass Layer
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(Color.Black.copy(alpha = 0.6f))
+        )
+
+        // 3. Surface Gradient (Top-down shine)
+        Box(
+            modifier = Modifier
+                .matchParentSize()
                 .background(
                     brush = Brush.verticalGradient(
                         colors = listOf(
-                            Color(0xFF021024), // DarkNavy
-                            Color(0xFF052659)  // RichBlue
+                            Color.White.copy(alpha = 0.05f),
+                            Color.Transparent
                         )
                     )
-                ),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            item { SettingsHeader(modifier = Modifier.padding(bottom = 16.dp)) }
-
-            item { SectionHeader("DISPLAY & BEHAVIOR", Modifier.padding(vertical = 8.dp)) }
-
-            item {
-                SettingItem(
-                    title = "Always On Display",
-                    description = "Show tree when locked",
-                    icon = Icons.Default.PhoneAndroid,
-                    value = uiState.aodEnabled,
-                    onToggle = viewModel::toggleAod
                 )
-            }
-            item {
-                SettingItem(
-                    title = "Show Clock",
-                    description = "Display time on lock screen",
-                    icon = Icons.Default.AccessTime,
-                    value = uiState.clockEnabled,
-                    onToggle = viewModel::toggleClock
-                )
-            }
-            item {
-                SettingItem(
-                    title = "Black & White Mode",
-                    description = "Reduce visual stimulation",
-                    icon = Icons.Default.Contrast,
-                    value = uiState.bwMode,
-                    onToggle = viewModel::toggleBwMode
-                )
-            }
-
-            item { BrightnessSliderCard(uiState.brightness, viewModel::updateBrightness) }
-
-            item { SectionHeader("WAKE GESTURE", Modifier.padding(vertical = 8.dp)) }
-
-            item {
-                GlassCard(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    GlassSegmentedControl(
-                        options = listOf("Single Tap", "Double Tap"),
-                        selectedIndex = uiState.wakeGesture,
-                        onSelectionChange = viewModel::setWakeGesture,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            }
-
-            if (!uiState.hasOverlayPermission) {
-                item { PermissionCard(viewModel::requestOverlayPermission) }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SettingsTopBar() {
-    TopAppBar(
-        title = { Text("Settings") },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = Color(0xFF0F1111),
-            titleContentColor = Color(0xFFF5F5F5)
         )
-    )
-}
 
-@Composable
-private fun SettingsHeader(modifier: Modifier = Modifier) {
-    // Keep only the small subtitle under the TopAppBar to avoid duplicate screen titles.
-    Column(modifier = modifier) {
-        Text(
-            text = "Customize your focus experience",
-            style = MaterialTheme.typography.titleMedium,
-            color = Color(0xFFA7A9A9), // TextSecondary
-            modifier = Modifier.padding(vertical = 4.dp)
-        )
-    }
-}
-
-@Composable
-private fun SectionHeader(
-    title: String,
-    modifier: Modifier = Modifier
-) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.labelLarge,
-        color = Color(0xFFD4AF37), // GoldPrimary
-        modifier = modifier
-    )
-}
-
-@Composable
-fun SettingItem(
-    title: String,
-    description: String,
-    icon: ImageVector,
-    value: Boolean,
-    onToggle: (Boolean) -> Unit
-) {
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF1F2121) // SurfaceColor
-        ),
-        elevation = CardDefaults.cardElevation(2.dp),
-        shape = RoundedCornerShape(12.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
+        // 4. Refractive Border (Light on top, Shadow on bottom)
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = Color(0xFFD4AF37), // Gold
-                    modifier = Modifier
-                        .size(24.dp)
-                        .padding(end = 16.dp)
-                )
-
-                Column {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Color(0xFFF5F5F5) // White
-                    )
-                    Text(
-                        text = description,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF777C7C) // Dimmed gray
-                    )
-                }
-            }
-
-            Switch(
-                checked = value,
-                onCheckedChange = onToggle,
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = Color(0xFFD4AF37), // Gold
-                    checkedTrackColor = Color(0xFFD4AF37).copy(alpha = 0.5f),
-                    uncheckedThumbColor = Color(0xFF777C7C),
-                    uncheckedTrackColor = Color(0xFF777C7C).copy(alpha = 0.3f)
-                )
-            )
-        }
-    }
-}
-
-
-@Composable
-private fun BrightnessSliderCard(
-    brightness: Float,
-    onBrightnessChange: (Float) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    GlassCard(modifier = modifier.fillMaxWidth()) {
-        Column {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = "AOD Brightness",
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            fontWeight = FontWeight.SemiBold
-                        ),
-                        color = Color(0xFFF5F5F5) // TextPrimary
-                    )
-                    Text(
-                        text = "Adjusts brightness only for Focus Mode",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFFA7A9A9) // TextSecondary
-                    )
-                }
-
-                Text(
-                    text = "${(brightness * 100).toInt()}%",
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold
+                .matchParentSize()
+                .border(
+                    width = 1.dp,
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            (borderColor ?: Color.White).copy(alpha = 0.4f), // Top Catchlight
+                            Color.Transparent,
+                            (borderColor ?: Color.Black).copy(alpha = 0.4f)  // Bottom Shadow
+                        )
                     ),
-                    color = accentOrange
+                    shape = RoundedCornerShape(24.dp)
+                )
+        )
+        Box(modifier = Modifier.fillMaxWidth(), content = content)
+    }
+}
+
+/**
+ * Inner "floating" panels for individual settings.
+ * Creates depth perception inside the main card.
+ */
+@Composable
+fun InnerGlassPanel(
+    content: @Composable BoxScope.() -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color.White.copy(alpha = 0.03f)) // Very subtle lift
+            .border(
+                width = 1.dp,
+                color = Color.White.copy(alpha = 0.05f), // Subtle definition
+                shape = RoundedCornerShape(16.dp)
+            )
+    ) {
+        content()
+    }
+}
+
+@Composable
+fun GlassSegmentedPicker(
+    options: List<String>,
+    selectedIndex: Int,
+    onOptionSelected: (Int) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        options.forEachIndexed { index, label ->
+            val isSelected = index == selectedIndex
+            val animatedColor by animateColorAsState(if (isSelected) CrimsonCore else Color.Transparent, label = "bg")
+            val borderColor = if (isSelected) CrimsonCore else Color.White.copy(alpha = 0.1f)
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(36.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(animatedColor.copy(alpha = if (isSelected) 0.2f else 0f))
+                    .border(1.dp, borderColor, RoundedCornerShape(8.dp))
+                    .clickable { onOptionSelected(index) },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = label,
+                    fontFamily = PixelFont,
+                    fontSize = 12.sp,
+                    color = if (isSelected) TextPrimary else TextSecondary,
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.Bold
                 )
             }
-
-            Spacer(Modifier.height(spacing.medium))
-
-            Slider(
-                value = brightness,
-                onValueChange = onBrightnessChange,
-                modifier = Modifier.fillMaxWidth(),
-                colors = SliderDefaults.colors(
-                    thumbColor = accentOrange,
-                    activeTrackColor = accentOrange,
-                    inactiveTrackColor = surfaceCard.copy(alpha = 0.6f)
-                )
-            )
         }
     }
 }
 
 @Composable
-private fun PermissionCard(
-    onRequestPermission: () -> Unit,
-    modifier: Modifier = Modifier
+fun GlassToggleRow(
+    title: String,
+    subtitle: String? = null,
+    icon: ImageVector,
+    isChecked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
 ) {
-    GlassCard(
-        modifier = modifier.fillMaxWidth(),
-        bloom = true,
-        bloomIntensity = 0.08f
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onCheckedChange(!isChecked) }
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(
-                imageVector = Icons.Default.Warning,
-                contentDescription = null,
-                tint = accentOrange,
-                modifier = Modifier.size(48.dp)
-            )
-
-            Spacer(Modifier.height(spacing.medium))
-
-            Text(
-                text = "Permission Required",
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.SemiBold
-                ),
-                color = Color(0xFFF5F5F5), // TextPrimary
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-            )
-
-            Spacer(Modifier.height(spacing.small))
-
-            Text(
-                text = "Focus Mode needs permission to display over other apps",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFFA7A9A9), // TextSecondary
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-            )
-
-            Spacer(Modifier.height(spacing.large))
-
-            GlassButton(
-                text = "Grant Permission",
-                onClick = onRequestPermission,
-                style = GlassButtonStyle.PRIMARY,
-                modifier = Modifier.fillMaxWidth()
-            )
+        // Icon in a small glass well
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(Color.Black.copy(alpha = 0.3f))
+                .border(1.dp, Color.White.copy(alpha = 0.1f), CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, null, tint = if (isChecked) CrimsonCore else TextSecondary, modifier = Modifier.size(20.dp))
         }
+
+        Spacer(Modifier.width(16.dp))
+
+        Column(Modifier.weight(1f)) {
+            Text(title, color = TextPrimary, fontSize = 16.sp, fontFamily = PixelFont, fontWeight = FontWeight.SemiBold)
+            if (subtitle != null) {
+                Text(subtitle, color = TextSecondary, style = MaterialTheme.typography.bodySmall, fontFamily = PixelFont)
+            }
+        }
+
+        GlassSwitch(checked = isChecked)
     }
 }
 
-class SettingsViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(SettingsViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return SettingsViewModel(context) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
+@Composable
+fun GlassSwitch(checked: Boolean) {
+    val thumbPos by animateFloatAsState(if (checked) 1f else 0f, label = "Switch")
+    val trackColor = if (checked) CrimsonCore.copy(alpha = 0.3f) else Color.White.copy(alpha = 0.05f)
+    val thumbColor = if (checked) CrimsonCore else TextSecondary
+
+    Box(
+        modifier = Modifier
+            .width(48.dp)
+            .height(28.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(trackColor)
+            .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(14.dp))
+    ) {
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .offset(x = (20 * thumbPos).dp)
+                .padding(4.dp)
+                .size(20.dp)
+                .neonGlow(if(checked) CrimsonCore else Color.Transparent, 10f, 0.8f) // Glow only when active
+                .clip(CircleShape)
+                .background(thumbColor)
+        )
+    }
+}
+
+@Composable
+fun GlassSlider(value: Float, onValueChange: (Float) -> Unit) {
+    Slider(
+        value = value,
+        onValueChange = onValueChange,
+        colors = SliderDefaults.colors(
+            thumbColor = CrimsonCore,
+            activeTrackColor = CrimsonCore,
+            inactiveTrackColor = Color.White.copy(alpha = 0.1f)
+        ),
+        modifier = Modifier.height(20.dp)
+    )
+}
+
+@Composable
+fun GlassButton(text: String, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .background(CrimsonCore.copy(alpha = 0.1f))
+            .border(1.dp, CrimsonCore.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+            .padding(horizontal = 20.dp, vertical = 12.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(text, color = CrimsonCore, fontWeight = FontWeight.Bold, fontFamily = PixelFont)
+    }
+}
+
+// --- VISUAL EFFECTS ---
+
+fun Modifier.neonGlow(
+    color: Color,
+    radius: Float = 20f,
+    alpha: Float = 1f
+) = this.drawBehind {
+    drawIntoCanvas { canvas ->
+        val paint = Paint()
+        paint.color = color.copy(alpha = alpha)
+        paint.asFrameworkPaint().maskFilter = BlurMaskFilter(radius, BlurMaskFilter.Blur.NORMAL)
+        val center = Offset(size.width / 2, size.height / 2)
+        val size = size.minDimension / 1.5f // Draw slightly smaller so it stays "behind"
+        canvas.drawCircle(center, size, paint)
     }
 }
