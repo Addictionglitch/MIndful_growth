@@ -21,9 +21,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import kotlin.math.min
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.example.mindfulgrowth.ui.theme.accentOrange
+import com.example.mindfulgrowth.ui.theme.SystemConfigColors
 import com.example.mindfulgrowth.ui.theme.spacing
-import com.example.mindfulgrowth.ui.theme.surfaceCard
 
 /**
  * Premium glass morphism card with blur, bloom, and hover effects
@@ -77,7 +76,7 @@ fun GlassCard(
                         drawRoundRect(
                             brush = Brush.verticalGradient(
                                 colors = listOf(
-                                    accentOrange.copy(alpha = glowAlpha * 0.06f),
+                                    Color(SystemConfigColors.ACCENT_RED_PRIMARY).copy(alpha = glowAlpha * 0.06f),
                                     Color.Transparent
                                 )
                             ),
@@ -87,7 +86,7 @@ fun GlassCard(
 
                         // Inner tint to give warm accent
                         drawRoundRect(
-                            color = accentOrange.copy(alpha = glowAlpha * 0.12f),
+                            color = Color(SystemConfigColors.ACCENT_RED_PRIMARY).copy(alpha = glowAlpha * 0.12f),
                             size = size,
                             cornerRadius = CornerRadius(cornerRadius.toPx())
                         )
@@ -101,8 +100,8 @@ fun GlassCard(
                 width = 1.dp,
                 brush = Brush.verticalGradient(
                     colors = listOf(
-                        surfaceCard.copy(alpha = 0.8f),
-                        surfaceCard.copy(alpha = 0.3f)
+                        Color(SystemConfigColors.GLASS_BORDER).copy(alpha = 0.8f),
+                        Color(SystemConfigColors.GLASS_BORDER).copy(alpha = 0.3f)
                     )
                 ),
                 shape = shape
@@ -144,7 +143,7 @@ fun GlassCard(
                 // Glass tint overlay
                 Box(modifier = Modifier
                     .matchParentSize()
-                    .background(surfaceCard)
+                    .background(Color(SystemConfigColors.GLASS_PRIMARY))
                 )
             }
         }

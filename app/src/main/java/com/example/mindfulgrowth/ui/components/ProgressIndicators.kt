@@ -13,8 +13,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.example.mindfulgrowth.ui.theme.accentBlue
-import com.example.mindfulgrowth.ui.theme.accentOrange
+import com.example.mindfulgrowth.ui.theme.SystemConfigColors
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -22,7 +21,7 @@ import kotlin.math.sin
 fun TreeGrowingLoader(
     modifier: Modifier = Modifier,
     loaderSize: Dp = 64.dp,
-    color: Color = accentBlue
+    color: Color = Color(SystemConfigColors.NEON_GREEN_ACCENT)
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "treeGrowing")
 
@@ -75,7 +74,7 @@ fun TreeGrowingLoader(
 fun CircularGlowLoader(
     modifier: Modifier = Modifier,
     size: Dp = 48.dp,
-    color: Color = accentOrange
+    color: Color = Color(SystemConfigColors.ACCENT_RED_PRIMARY)
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "circularGlow")
 

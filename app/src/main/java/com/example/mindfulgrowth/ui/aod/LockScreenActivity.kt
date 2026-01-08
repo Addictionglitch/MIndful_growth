@@ -15,6 +15,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.ContextCompat
 import androidx.core.view.GestureDetectorCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -135,7 +136,7 @@ class LockScreenActivity : AppCompatActivity() {
 
                 if (cappedProgress >= 1.0f) {
                     tvStatus.text = "Fully Grown!"
-                    tvStatus.setTextColor(Color.GREEN)
+                    tvStatus.setTextColor(ContextCompat.getColor(this@LockScreenActivity, R.color.neon_green_accent))
                 } else {
                     tvStatus.text = "Growing... ${(cappedProgress * 100).toInt()}%"
                 }

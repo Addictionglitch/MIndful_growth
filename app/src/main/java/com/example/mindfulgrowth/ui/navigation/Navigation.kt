@@ -31,19 +31,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
+import com.example.mindfulgrowth.ui.theme.SystemConfigColors
 import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
 
 import com.example.mindfulgrowth.ui.screens.customize.CustomizeScreen
 import com.example.mindfulgrowth.ui.screens.settings.SettingsScreen
 import com.example.mindfulgrowth.ui.screens.stats.StatsScreen
-
-// --- COLOR PALETTE ---
-private val CrimsonCore = Color(0xFFFF0007)
-private val VoidBlack = Color(0xFF050505)
-private val GradientHighlight = CrimsonCore
-private val GlassBorderTop = Color(0x50FFFFFF)
-private val GlassBorderBottom = Color(0x15FFFFFF)
 
 sealed class Screen(val index: Int, val title: String, val icon: ImageVector) {
     object Stats : Screen(0, "Stats", Icons.Rounded.BarChart)
@@ -79,13 +73,13 @@ fun MindfulGrowthApp() {
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .height(140.dp)
+                .height(150.dp)
                 .background(
                     brush = Brush.verticalGradient(
                         colors = listOf(
                             Color.Transparent,
-                            VoidBlack.copy(alpha = 0.8f),
-                            VoidBlack
+                            Color(SystemConfigColors.PRIMARY_BG).copy(alpha = 0.4f),
+                            Color(SystemConfigColors.PRIMARY_BG)
                         )
                     )
                 )
@@ -111,7 +105,7 @@ fun MindfulGrowthApp() {
                 },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = 20.dp, start = 25.dp, end = 25.dp)
+                    .padding(bottom = 15.dp, start = 20.dp, end = 20.dp)
             )
         }
     }
@@ -132,6 +126,7 @@ private fun LiquidGlassBottomNavigation(
             .fillMaxWidth()
             .clip(RoundedCornerShape(36.dp))
     ) {
+
         val width = maxWidth
         val tabWidth = width / items.size
 
@@ -139,7 +134,7 @@ private fun LiquidGlassBottomNavigation(
         Box(
             modifier = Modifier
                 .matchParentSize()
-                .background(Color.Black.copy(alpha = 0.4f))
+                .background(Color(SystemConfigColors.BOTTOM_NAV_BG))
         )
         Box(
             modifier = Modifier
@@ -147,7 +142,7 @@ private fun LiquidGlassBottomNavigation(
                 .border(
                     width = 1.dp,
                     brush = Brush.verticalGradient(
-                        colors = listOf(GlassBorderTop, Color.Transparent, GlassBorderBottom)
+                        colors = listOf(Color(SystemConfigColors.GLASS_BORDER), Color.Transparent, Color(SystemConfigColors.GLASS_BORDER).copy(alpha = 0.5f))
                     ),
                     shape = RoundedCornerShape(36.dp)
                 )
@@ -181,14 +176,17 @@ private fun LiquidGlassBottomNavigation(
                     contentAlignment = Alignment.Center
                 ) {
                     val iconColor by animateColorAsState(
-                        targetValue = if (isSelected) GradientHighlight else Color.White.copy(alpha = 0.4f),
+                        targetValue = if (isSelected) Color(SystemConfigColors.BOTTOM_NAV_ICON_ACTIVE) else Color(SystemConfigColors.BOTTOM_NAV_ICON_INACTIVE),
                         animationSpec = tween(300),
                         label = "Color"
                     )
 
                     val scale by animateFloatAsState(
                         targetValue = if (isSelected) 1.2f else 1.0f,
-                        animationSpec = spring(dampingRatio = 0.5f, stiffness = Spring.StiffnessLow),
+                        animationSpec = spring(
+                            dampingRatio = 0.5f,
+                            stiffness = Spring.StiffnessLow
+                        ),
                         label = "Scale"
                     )
 
@@ -234,8 +232,8 @@ fun LiquidIndicator(
         drawRoundRect(
             brush = Brush.radialGradient(
                 colors = listOf(
-                    GradientHighlight.copy(alpha = 0.15f),
-                    CrimsonCore.copy(alpha = 0.05f),
+                    Color(SystemConfigColors.NEON_GREEN_ACCENT).copy(alpha = 0.15f),
+                    Color(SystemConfigColors.ACCENT_RED_PRIMARY).copy(alpha = 0.05f),
                     Color.Transparent
                 ),
                 center = Offset(indicatorCenterX, heightPx/2),

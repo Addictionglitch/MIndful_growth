@@ -20,7 +20,7 @@ class WaveGraphView @JvmOverloads constructor(
 
     // --- Paints ---
     private val linePaint = Paint().apply {
-        color = ContextCompat.getColor(context, R.color.graph_line)
+        color = ContextCompat.getColor(context, R.color.accent_red_primary)
         strokeWidth = 5f // Thinner, more elegant line
         style = Paint.Style.STROKE
         isAntiAlias = true
@@ -33,14 +33,14 @@ class WaveGraphView @JvmOverloads constructor(
     }
 
     private val textPaint = Paint().apply {
-        color = ContextCompat.getColor(context, R.color.text_secondary_dark)
+        color = ContextCompat.getColor(context, R.color.text_secondary_new)
         textSize = 28f
         textAlign = Paint.Align.RIGHT
         isAntiAlias = true
     }
 
     private val labelPaint = Paint().apply {
-        color = ContextCompat.getColor(context, R.color.text_secondary_dark)
+        color = ContextCompat.getColor(context, R.color.text_secondary_new)
         textSize = 28f
         textAlign = Paint.Align.CENTER
         isAntiAlias = true
@@ -144,8 +144,8 @@ class WaveGraphView @JvmOverloads constructor(
         // Set Gradient Shader
         fillPaint.shader = LinearGradient(
             0f, 0f, 0f, graphHeight,
-            ContextCompat.getColor(context, R.color.graph_fill_start),
-            ContextCompat.getColor(context, R.color.graph_fill_end),
+            ContextCompat.getColor(context, R.color.accent_red_primary),
+            ContextCompat.getColor(context, R.color.accent_red_secondary),
             Shader.TileMode.CLAMP
         )
 

@@ -8,13 +8,9 @@ import android.os.Build
 import android.provider.Settings
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -27,14 +23,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -55,16 +48,16 @@ import com.example.mindfulgrowth.R
 
 // --- COLORS (Crimson Glass Palette) ---
 private val CrimsonCore = Color(0xFFFF0007)
-private val DeepCrimson = Color(0xFF2D0001)
 private val VoidBlack = Color(0xFF050505)
 private val TextPrimary = Color.White
 private val TextSecondary = Color.White.copy(alpha = 0.7f)
-private val IconAccent = CrimsonCore
 
 // --- TYPOGRAPHY ---
 private val PixelFont = FontFamily.Monospace
 
 // --- LOGIC SECTION ---
+// (Omitted unchanged Logic classes for brevity, only UI updated below)
+// ... [Keep SettingsViewModel, PreferencesKeys, etc. unchanged] ...
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "mindful_settings")
 
@@ -173,20 +166,7 @@ fun SettingsScreen(
     val uiState by viewModel.uiState.collectAsState()
 
     Box(modifier = modifier.fillMaxSize()) {
-        // 1. Background Image
-        Image(
-            painter = painterResource(id = R.drawable.app_background),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
-        )
-
-        // 2. Dark Scrim (For text readability)
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.7f)) // Adjust alpha for brightness
-        )
+        // Removed Background Image and Scrim to use MainActivity's global background
 
         LazyColumn(
             modifier = Modifier

@@ -13,9 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.mindfulgrowth.ui.theme.accentBlue
-import com.example.mindfulgrowth.ui.theme.accentOrange
-import com.example.mindfulgrowth.ui.theme.accentPurple
+import com.example.mindfulgrowth.ui.theme.SystemConfigColors
 import com.example.mindfulgrowth.ui.theme.spacing
 import kotlinx.coroutines.delay
 
@@ -78,19 +76,19 @@ private fun CustomSnackbar(
     when (type) {
         SnackbarType.SUCCESS -> {
             icon = Icons.Default.CheckCircle
-            iconColor = accentBlue
+            iconColor = Color(SystemConfigColors.NEON_GREEN_ACCENT)
         }
         SnackbarType.ERROR -> {
             icon = Icons.Default.Error
-            iconColor = accentOrange
+            iconColor = Color(SystemConfigColors.ACCENT_RED_PRIMARY)
         }
         SnackbarType.WARNING -> {
             icon = Icons.Default.Warning
-            iconColor = accentOrange
+            iconColor = Color(SystemConfigColors.ACCENT_RED_SECONDARY)
         }
         SnackbarType.INFO -> {
             icon = Icons.Default.Info
-            iconColor = accentPurple
+            iconColor = Color(SystemConfigColors.TEXT_SECONDARY)
         }
     }
 
@@ -123,7 +121,7 @@ private fun CustomSnackbar(
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontWeight = FontWeight.Medium
                     ),
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = Color(SystemConfigColors.TEXT_PRIMARY)
                 )
             }
 
@@ -131,7 +129,7 @@ private fun CustomSnackbar(
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = "Dismiss",
-                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    tint = Color(SystemConfigColors.TEXT_SECONDARY).copy(alpha = 0.7f),
                     modifier = Modifier.size(20.dp)
                 )
             }

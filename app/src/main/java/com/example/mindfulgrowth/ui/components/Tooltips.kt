@@ -8,12 +8,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
+import com.example.mindfulgrowth.ui.theme.SystemConfigColors
 import com.example.mindfulgrowth.ui.theme.spacing
 import kotlinx.coroutines.delay
 
@@ -63,7 +65,7 @@ fun TooltipPopup(
                 Text(
                     text = text,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = Color(SystemConfigColors.TEXT_PRIMARY)
                 )
             }
         }

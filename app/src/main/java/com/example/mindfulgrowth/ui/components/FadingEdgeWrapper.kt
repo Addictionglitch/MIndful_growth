@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.example.mindfulgrowth.ui.theme.SystemConfigColors
 
 @Composable
 fun FadingEdgeWrapper(
@@ -25,7 +26,7 @@ fun FadingEdgeWrapper(
                 .fillMaxWidth()
                 .height(fadeHeight)
                 .align(Alignment.TopCenter)
-                .background(Brush.verticalGradient(colors = listOf(Color.Black, Color.Transparent)))
+                .background(Brush.verticalGradient(colors = listOf(Color(SystemConfigColors.PRIMARY_BG), Color.Transparent)))
         )
 
         // Bottom Fade
@@ -34,7 +35,7 @@ fun FadingEdgeWrapper(
                 .fillMaxWidth()
                 .height(fadeHeight)
                 .align(Alignment.BottomCenter)
-                .background(Brush.verticalGradient(colors = listOf(Color.Transparent, Color.Black)))
+                .background(Brush.verticalGradient(colors = listOf(Color.Transparent, Color(SystemConfigColors.PRIMARY_BG))))
         )
     }
 }

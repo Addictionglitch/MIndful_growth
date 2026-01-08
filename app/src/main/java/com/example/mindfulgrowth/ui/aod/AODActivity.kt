@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.example.mindfulgrowth.ui.theme.SystemConfigColors
 
 class AODActivity : ComponentActivity() {
 
@@ -37,7 +38,7 @@ class AODActivity : ComponentActivity() {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black)
+                    .background(Color(SystemConfigColors.PRIMARY_BG))
                     .pointerInput(Unit) {
                         detectTapGestures(
                             onDoubleTap = {
@@ -49,10 +50,10 @@ class AODActivity : ComponentActivity() {
                 contentAlignment = Alignment.Center
             ) {
                 // Placeholder for Phase 3 Designs
-                Text(text = "12:00", color = Color.White, fontSize = 64.sp)
+                Text(text = "12:00", color = Color(SystemConfigColors.TEXT_PRIMARY), fontSize = 64.sp)
                 Text(
                     text = "Double tap to wake",
-                    color = Color.Gray,
+                    color = Color(SystemConfigColors.TEXT_SECONDARY),
                     fontSize = 12.sp,
                     modifier = Modifier.align(Alignment.BottomCenter)
                 )

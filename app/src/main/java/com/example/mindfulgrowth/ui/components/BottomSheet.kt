@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import com.example.mindfulgrowth.ui.theme.SystemConfigColors
 import com.example.mindfulgrowth.ui.theme.spacing
 
 @Composable

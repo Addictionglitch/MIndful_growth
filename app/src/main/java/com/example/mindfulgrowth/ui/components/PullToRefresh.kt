@@ -7,10 +7,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import com.example.mindfulgrowth.ui.theme.accentOrange
+import com.example.mindfulgrowth.ui.theme.SystemConfigColors
 import kotlin.math.pow
 
 @Composable
@@ -91,7 +92,7 @@ fun PullToRefreshContainer(
                     .rotate(if (isRefreshing) rotation else animatedOffset)
             ) {
                 PulsingGlow(
-                    color = accentOrange,
+                    color = Color(SystemConfigColors.ACCENT_RED_PRIMARY),
                     modifier = Modifier.size(40.dp)
                 )
             }

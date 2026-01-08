@@ -9,8 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import com.example.mindfulgrowth.ui.theme.accentOrange
-import com.example.mindfulgrowth.ui.theme.surfaceCard
+import com.example.mindfulgrowth.ui.theme.SystemConfigColors
 import kotlin.random.Random
 
 /**
@@ -20,7 +19,7 @@ import kotlin.random.Random
 fun FloatingParticles(
     modifier: Modifier = Modifier,
     particleCount: Int = 30,
-    color: Color = accentOrange.copy(alpha = 0.1f)
+    color: Color = Color(SystemConfigColors.ACCENT_RED_PRIMARY).copy(alpha = 0.1f)
 ) {
     val particles = remember {
         List(particleCount) {
@@ -89,9 +88,9 @@ fun ShimmerEffect(modifier: Modifier = Modifier) {
             drawRect(
                 brush = Brush.horizontalGradient(
                     colors = listOf(
-                        surfaceCard.copy(alpha = 0f),
-                        surfaceCard,
-                        surfaceCard.copy(alpha = 0f)
+                        Color(SystemConfigColors.GLASS_PRIMARY).copy(alpha = 0f),
+                        Color(SystemConfigColors.GLASS_PRIMARY),
+                        Color(SystemConfigColors.GLASS_PRIMARY).copy(alpha = 0f)
                     ),
                     startX = shimmerX - 200f,
                     endX = shimmerX + 200f
@@ -106,7 +105,7 @@ fun ShimmerEffect(modifier: Modifier = Modifier) {
  */
 @Composable
 fun PulsingGlow(
-    color: Color = accentOrange,
+    color: Color = Color(SystemConfigColors.ACCENT_RED_PRIMARY),
     modifier: Modifier = Modifier
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
