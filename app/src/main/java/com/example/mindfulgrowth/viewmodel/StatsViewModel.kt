@@ -1,26 +1,38 @@
 package com.example.mindfulgrowth.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.mindfulgrowth.data.AppDatabase
+import com.example.mindfulgrowth.data.FocusSession
 import com.example.mindfulgrowth.ui.screens.stats.StatsUiState
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlin.random.Random
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.temporal.ChronoUnit
 
-// Reusing existing enum
 enum class StatsRange(val label: String) {
     DAY("Day"), WEEK("Week"), MONTH("Month")
 }
 
-class StatsViewModel : ViewModel() {
+class StatsViewModel(application: Application) : AndroidViewModel(application) {
+
+    // 1. Initialize Database
+    private val db = androidx.room.Room.databaseBuilder(
+        application,
+        AppDatabase::class.java,
+        "mindful-db"
+    ).build()
+    private val dao = db.focusDao()
 
     private val _uiState = MutableStateFlow<StatsUiState>(StatsUiState.Loading)
     val uiState: StateFlow<StatsUiState> = _uiState.asStateFlow()
 
-    // Internal state tracking
     private var currentRange = StatsRange.WEEK
 
     init {
@@ -37,46 +49,100 @@ class StatsViewModel : ViewModel() {
     }
 
     private fun loadStats(range: StatsRange) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             _uiState.value = StatsUiState.Loading
-            
-            // SIMULATION: Replace this delay with actual Repository calls
-            // e.g. statsRepository.getUsageStats(range)
-            delay(1200) 
 
-            // SIMULATION: Randomly throw error to demonstrate Error State
-            if (Random.nextInt(10) == 0) {
-                _uiState.value = StatsUiState.Error("Failed to load usage statistics.")
-                return@launch
+            try {
+                // A. Calculate Date Range (Start/End Timestamps)
+                val now = LocalDateTime.now()
+                val (start, end) = getRangeTimestamps(range, now)
+
+                // B. Fetch Data from Room
+                val sessionsInRange = dao.getSessionsBetween(start, end)
+                val totalSecondsInRange = dao.getTotalFocusSeconds(start, end) ?: 0L
+                
+                // C. Fetch Lifetime Stats (Trees/Forests logic)
+                val lifetimeCount = dao.getTotalSessionCount()
+                
+                // D. Process Data
+                val formattedTime = formatDuration(totalSecondsInRange)
+                
+                // Forest Logic: 100 Trees = 1 Forest
+                val forestsGrown = lifetimeCount / 100
+                // Progress to next forest (e.g., 45 trees -> 0.45 progress)
+                val forestProgress = (lifetimeCount % 100) / 100f
+                val treesToNextForest = 100 - (lifetimeCount % 100)
+
+                // E. Generate Graph Data
+                val graphPoints = generateGraphData(range, sessionsInRange, start, end)
+
+                _uiState.value = StatsUiState.Success(
+                    selectedRange = range,
+                    totalFocusTime = formattedTime,
+                    focusTimeTrend = "N/A", // Requires comparing to previous range (omitted for brevity)
+                    isTrendPositive = true,
+                    pickupsCount = 0, // Requires UsageStatsManager (separate permission)
+                    treesGrown = lifetimeCount,
+                    goalProgress = forestProgress, // Reusing goal bar for Forest Progress
+                    goalTarget = "$treesToNextForest trees to next Forest",
+                    graphData = graphPoints
+                )
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+                _uiState.value = StatsUiState.Error("Database Error: ${e.localizedMessage}")
             }
-
-            // Mock Data Generation based on Range
-            val (data, time, trend, isPos) = when (range) {
-                StatsRange.DAY -> Quad(
-                    listOf(0.1f, 0.3f, 0.2f, 0.5f, 0.4f, 0.8f, 0.6f), "45m", "+5%", true
-                )
-                StatsRange.WEEK -> Quad(
-                    listOf(0.2f, 0.4f, 0.35f, 0.7f, 0.5f, 0.9f, 0.75f), "18h 12m", "+12%", true
-                )
-                StatsRange.MONTH -> Quad(
-                    listOf(0.5f, 0.6f, 0.4f, 0.8f, 0.7f, 0.9f, 0.85f), "64h", "-8%", false
-                )
-            }
-
-            _uiState.value = StatsUiState.Success(
-                selectedRange = range,
-                totalFocusTime = time,
-                focusTimeTrend = trend,
-                isTrendPositive = isPos,
-                pickupsCount = Random.nextInt(10, 60),
-                treesGrown = Random.nextInt(1, 15),
-                goalProgress = 0.75f,
-                goalTarget = "60m",
-                graphData = data
-            )
         }
     }
-}
 
-// Helper tuple
-private data class Quad<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
+    // --- HELPER: Date Ranges ---
+    private fun getRangeTimestamps(range: StatsRange, now: LocalDateTime): Pair<Long, Long> {
+        val zoneId = ZoneId.systemDefault()
+        val end = now.atZone(zoneId).toInstant().toEpochMilli()
+
+        val start = when (range) {
+            StatsRange.DAY -> now.truncatedTo(ChronoUnit.DAYS).atZone(zoneId).toInstant().toEpochMilli()
+            StatsRange.WEEK -> now.minusDays(6).truncatedTo(ChronoUnit.DAYS).atZone(zoneId).toInstant().toEpochMilli()
+            StatsRange.MONTH -> now.minusDays(30).truncatedTo(ChronoUnit.DAYS).atZone(zoneId).toInstant().toEpochMilli()
+        }
+        return Pair(start, end)
+    }
+
+    // --- HELPER: Graph Bucketing ---
+    private fun generateGraphData(
+        range: StatsRange, 
+        sessions: List<FocusSession>, 
+        start: Long, 
+        end: Long
+    ): List<Float> {
+        if (sessions.isEmpty()) return listOf(0f, 0f, 0f, 0f, 0f)
+
+        // Bucket Logic:
+        // If Week: 7 buckets (one per day)
+        // If Day: 24 buckets (one per hour)
+        val bucketCount = if (range == StatsRange.WEEK) 7 else if (range == StatsRange.DAY) 24 else 30
+        val interval = (end - start) / bucketCount
+        
+        val buckets = FloatArray(bucketCount) { 0f }
+        var maxVal = 0f
+
+        sessions.forEach { session ->
+            // Find which bucket this session belongs to
+            val offset = session.startTime - start
+            val index = (offset / interval).toInt().coerceIn(0, bucketCount - 1)
+            
+            buckets[index] += session.durationSeconds.toFloat()
+            if (buckets[index] > maxVal) maxVal = buckets[index]
+        }
+
+        // Normalize to 0.0 - 1.0 for the UI Graph
+        return if (maxVal == 0f) buckets.toList() else buckets.map { it / maxVal }
+    }
+
+    // --- HELPER: Time Formatting ---
+    private fun formatDuration(seconds: Long): String {
+        val hrs = seconds / 3600
+        val mins = (seconds % 3600) / 60
+        return if (hrs > 0) "${hrs}h ${mins}m" else "${mins}m"
+    }
+}

@@ -1,9 +1,9 @@
 package com.example.mindfulgrowth
+
 import android.graphics.RenderEffect
 import android.graphics.Shader
 import android.os.Build
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -14,175 +14,119 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asComposeRenderEffect
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.Brush
+import com.example.mindfulgrowth.model.defaultTrees
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 // --- MAIN ENTRY POINT ---
 @Composable
 fun MindfulLockScreen(
-    // Logic passes data down here.
-    // If logic isn't ready, pass defaults:
     timerProgress: Float = 0.65f, // 0.0 to 1.0
-    currentTime: LocalDateTime = LocalDateTime.now()
+    currentTime: LocalDateTime = LocalDateTime.now(),
+    isAmbient: Boolean = false,
+    treeStages: List<Int> = defaultTrees.first().stageResIds
 ) {
-    val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
-    val dateFormatter = DateTimeFormatter.ofPattern("EEEE, MMM d")
+    // 1. Calculate Growth Index (0 to 4)
+    val stageIndex = (timerProgress * 5).toInt().coerceIn(0, 4)
+    val currentDrawable = treeStages[stageIndex]
 
-    // Deep Focus Theme Colors
-    val deepBg = Brush.verticalGradient(
-        colors = listOf(
-            Color(0xFF0F2027), // Deep Blue/Black
-            Color(0xFF203A43),
-            Color(0xFF2C5364)  // Slate
-        )
-    )
+    // 2. Battery Protection: ALWAYS Pure Black for AOD efficiency
+    val bgColor = Color.Black
+    // Dim text slightly in ambient mode to prevent burn-in/glare
+    val textColor = if (isAmbient) Color.Gray else Color.White
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(deepBg)
+            .background(bgColor)
     ) {
-        // 1. Ambient Background Animation (Breathing Orbs)
-        AmbientBackground()
-
-        // 2. Main Foreground Content
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 64.dp, bottom = 48.dp),
+                .padding(vertical = 64.dp), // Vertical padding for spacing
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween
+            verticalArrangement = Arrangement.SpaceBetween // Pushes content to Top, Center, Bottom
         ) {
-            // --- TOP: Status / Weather Placeholder ---
-            FrostedGlassCard(
-                modifier = Modifier
-                    .width(200.dp)
-                    .height(50.dp)
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    Text(
-                        text = "🌱 Focus Mode Active",
-                        color = Color.White.copy(alpha = 0.9f),
-                        style = MaterialTheme.typography.labelLarge
-                    )
-                }
-            }
 
-            // --- CENTER: The Timer & Clock ---
+            // --- TOP: CLOCK (Moved Here) ---
+            ClockContent(currentTime, textColor)
+
+            // --- CENTER: TREE ONLY (No Ring) ---
             Box(contentAlignment = Alignment.Center) {
-                // The high-performance GPU-only animation
-                MindfulTimerRing(progress = timerProgress)
-
-                // The Clock Text
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = timeFormatter.format(currentTime),
-                        style = MaterialTheme.typography.displayLarge.copy(
-                            fontSize = 86.sp,
-                            fontWeight = FontWeight.Thin,
-                            fontFamily = FontFamily.Monospace, // VITAL: Prevents jitter
-                            letterSpacing = (-2).sp
-                        ),
-                        color = Color.White,
-                        // This prevents numbers from wiggling when they change width (1 vs 0)
-                        modifier = Modifier.graphicsLayer { alpha = 0.95f }
-                    )
-                    Text(
-                        text = dateFormatter.format(currentTime).uppercase(),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Color.White.copy(alpha = 0.6f),
-                        letterSpacing = 2.sp
-                    )
-                }
+                Image(
+                    painter = painterResource(id = currentDrawable),
+                    contentDescription = "Growth Stage ${stageIndex + 1}",
+                    modifier = Modifier
+                        .size(670.dp) // <--- CHANGE TREE SIZE HERE (Increase/Decrease)
+                )
             }
 
-            // --- BOTTOM: Metrics Placeholders ---
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                MetricItem(label = "Streak", value = "12")
-                MetricItem(label = "Focus", value = "45m")
-                MetricItem(label = "Tree", value = "Lvl 4")
+            // --- BOTTOM: STATUS (Moved Here) ---
+            // Only show the frosted card if NOT in ambient mode (save pixels)
+            // Or show simple text if you want it visible in AOD too.
+            if (!isAmbient) {
+                FrostedGlassCard(
+                    modifier = Modifier
+                        .width(200.dp)
+                        .height(50.dp)
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Text(
+                            text = "🌱 Focus Active",
+                            color = Color.White.copy(alpha = 0.9f),
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                    }
+                }
+            } else {
+                // In AOD, just show simple text or nothing to save battery
+                Text(
+                    text = "Focus Active",
+                    color = Color.DarkGray,
+                    fontSize = 12.sp
+                )
             }
         }
     }
 }
 
-// --- COMPONENT: High Performance Timer Ring ---
+// --- COMPONENT: Clock Content ---
 @Composable
-fun MindfulTimerRing(progress: Float) {
-    // Continuous slow rotation for the "futuristic" feel
-    val infiniteTransition = rememberInfiniteTransition(label = "ring_spin")
-    val rotation by infiniteTransition.animateFloat(
-        initialValue = 0f, targetValue = 360f,
-        animationSpec = infiniteRepeatable(tween(20000, easing = LinearEasing)),
-        label = "rotation"
-    )
+fun ClockContent(currentTime: LocalDateTime, textColor: Color) {
+    val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+    val dateFormatter = DateTimeFormatter.ofPattern("EEEE, MMM d")
 
-    // Pulse effect
-    val pulse by infiniteTransition.animateFloat(
-        initialValue = 0.98f, targetValue = 1.02f,
-        animationSpec = infiniteRepeatable(
-            tween(2000, easing = FastOutSlowInEasing),
-            RepeatMode.Reverse
-        ),
-        label = "pulse"
-    )
-
-    Box(
-        modifier = Modifier
-            .size(320.dp)
-            .graphicsLayer {
-                scaleX = pulse
-                scaleY = pulse
-            }
-    ) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val strokeWidth = 12.dp.toPx()
-
-            // 1. Background Track (dim)
-            drawCircle(
-                color = Color.White.copy(alpha = 0.05f),
-                style = Stroke(width = strokeWidth)
-            )
-
-            // 2. The Progress Arc (Neon Cyan)
-            // Using rotate allows the gradient to spin, looking "alive"
-            rotate(degrees = rotation) {
-                drawArc(
-                    brush = Brush.sweepGradient(
-                        colors = listOf(
-                            Color(0xFF00C6FF).copy(alpha = 0.1f), // Fade tail
-                            Color(0xFF00C6FF),                    // Bright body
-                            Color(0xFFE0FFFF)                     // White-hot tip
-                        )
-                    ),
-                    startAngle = -90f,
-                    sweepAngle = 360 * progress,
-                    useCenter = false,
-                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-                )
-            }
-        }
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = timeFormatter.format(currentTime),
+            style = MaterialTheme.typography.displayLarge.copy(
+                fontSize = 86.sp,
+                fontWeight = FontWeight.Thin,
+                fontFamily = FontFamily.Monospace,
+                letterSpacing = (-2).sp
+            ),
+            color = textColor,
+            modifier = Modifier.graphicsLayer { alpha = 0.95f }
+        )
+        Text(
+            text = dateFormatter.format(currentTime).uppercase(),
+            style = MaterialTheme.typography.titleMedium,
+            color = textColor.copy(alpha = 0.6f),
+            letterSpacing = 2.sp
+        )
     }
 }
 
@@ -207,7 +151,7 @@ fun FrostedGlassCard(
                 shape = RoundedCornerShape(30.dp)
             )
     ) {
-        // Apply a very small native blur only to the background layer to preserve content sharpness
+        // Apply a very small native blur only to the background layer
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             Box(modifier = Modifier.matchParentSize().graphicsLayer {
                 val blur = RenderEffect.createBlurEffect(4f, 4f, Shader.TileMode.CLAMP)
@@ -216,61 +160,4 @@ fun FrostedGlassCard(
         }
         content()
     }
-}
-
-// --- COMPONENT: Ambient Background Orbs ---
-@Composable
-fun AmbientBackground() {
-    val infiniteTransition = rememberInfiniteTransition(label = "ambient")
-    val yShift by infiniteTransition.animateFloat(
-        initialValue = 0f, targetValue = 100f,
-        animationSpec = infiniteRepeatable(tween(5000, easing = SineBounceEasing), RepeatMode.Reverse),
-        label = "orb_float"
-    )
-
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        // Top Left Orb (Cyan)
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(Color(0xFF00C6FF).copy(alpha = 0.2f), Color.Transparent),
-                center = Offset(0f, 0f),
-                radius = 600f
-            ),
-            center = Offset(100f, 200f + yShift),
-            radius = 400f
-        )
-        // Bottom Right Orb (Magenta/Purple)
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(Color(0xFF9D50BB).copy(alpha = 0.15f), Color.Transparent),
-                center = Offset(size.width, size.height),
-                radius = 700f
-            ),
-            center = Offset(size.width - 100f, size.height - 100f - yShift),
-            radius = 500f
-        )
-    }
-}
-
-// --- COMPONENT: Simple Metric Item ---
-@Composable
-fun MetricItem(label: String, value: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            text = value,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            color = Color.White
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = Color.White.copy(alpha = 0.5f)
-        )
-    }
-}
-
-// Helper easing for organic movement
-val SineBounceEasing = Easing { fraction ->
-    Math.sin(fraction * Math.PI).toFloat()
 }

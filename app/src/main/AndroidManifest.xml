@@ -3,15 +3,11 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" xmlns:tools="http://schemas.android.com/tools"
-        tools:ignore="ProtectedPermissions" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" /> <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" /> <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
+        android:name=".MindfulGrowthApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -24,11 +20,6 @@
         android:largeHeap="true"
         android:enableOnBackInvokedCallback="true"
         tools:targetApi="31">
-
-        <property
-            android:name="android.adservices.AD_SERVICES_CONFIG"
-            android:resource="@xml/gma_ad_services_config"
-            tools:replace="android:resource" />
 
         <activity
             android:name=".MainActivity"
@@ -46,7 +37,7 @@
             android:exported="false"
             android:showOnLockScreen="true"
             android:showWhenLocked="true"
-            android.turnScreenOn="true"
+            android:turnScreenOn="true"  
             android:launchMode="singleInstance"
             android:taskAffinity=""
             android:excludeFromRecents="true"
@@ -57,8 +48,8 @@
             android:name=".service.ScreenStateService"
             android:enabled="true"
             android:exported="false"
-            android:foregroundServiceType="dataSync|location|connectedDevice|mediaProjection|phoneCall|shortService|health|systemExempted">
-        </service>
+            android:foregroundServiceType="shortService"> 
+            </service>
 
         <receiver
             android:name=".receiver.BootReceiver"

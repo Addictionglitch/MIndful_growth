@@ -24,7 +24,7 @@ data class MindfulColors(
 
     // Gradients
     val gradientStart: Color = Color(0xFF2C211B),
-    val gradientMid: Color = Color(0xFF221E1C), // Added this
+    val gradientMid: Color = Color(0xFF221E1C),
     val gradientEnd: Color = Color(0xFF1A1F1F),
 
     val surfaceCard: Color = Color(0xFF1E1E1E),
@@ -32,7 +32,7 @@ data class MindfulColors(
     val textSecondary: Color = Color(0xFF9D8D7E),
 
     // Status
-    val warning: Color = Color(0xFFFFA726) // Added this
+    val warning: Color = Color(0xFFFFA726)
 )
 
 // 2. Define Spacing
@@ -41,7 +41,7 @@ data class MindfulSpacing(
     val sm: Dp = 8.dp,
     val md: Dp = 16.dp,
     val lg: Dp = 24.dp,
-    val xl: Dp = 32.dp // Added this
+    val xl: Dp = 32.dp
 )
 
 // 3. Define Shapes
@@ -92,8 +92,10 @@ fun MindfulGrowthTheme(
         LocalMindfulSpacing provides MindfulSpacing(),
         LocalMindfulShapes provides MindfulShapes()
     ) {
+        // FIXED: Now passing 'typography' so custom fonts work
         MaterialTheme(
             colorScheme = colorScheme,
+            typography = typography, 
             content = content
         )
     }
