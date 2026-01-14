@@ -24,7 +24,11 @@ import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Yard
 import androidx.compose.material.icons.filled.Settings // Import for Settings icon
+import androidx.compose.material.icons.filled.Info // Added import
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton // Added import if not present implicitly
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -42,6 +46,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontFamily // Added import
 import androidx.compose.ui.unit.dp
 import com.example.mindfulgrowth.ui.feed.FeedScreen
 import com.example.mindfulgrowth.ui.screens.GardenScreen
@@ -49,7 +54,7 @@ import com.example.mindfulgrowth.ui.screens.home.HomeScreen
 import com.example.mindfulgrowth.ui.screens.stats.StatsScreen
 import com.example.mindfulgrowth.ui.theme.MindfulPalette
 import com.example.mindfulgrowth.ui.components.ModalBottomSheet // Import ModalBottomSheet
-import com.example.mindfulgrowth.ui.components.GlassCard // Import GlassCard
+import com.example.mindfulgrowth.ui.components.GlassCard // Import GlassCard (retained if used elsewhere, but not for header)
 import com.example.mindfulgrowth.ui.screens.settings.SettingsScreen // Import SettingsScreen
 import kotlinx.coroutines.launch
 
@@ -78,20 +83,46 @@ fun MindfulGrowthApp() {
             .fillMaxSize()
             .background(Color.Transparent) // MainActivity provides the gradient
     ) {
-        // --- Content Pager ---
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.fillMaxSize()
-        ) { page ->
-            when (navItems[page]) {
-                NavigationItem.Home -> HomeScreen()
-                NavigationItem.Feed -> FeedScreen()
-                NavigationItem.Stats -> StatsScreen()
-                NavigationItem.Garden -> GardenScreen()
+        Column(modifier = Modifier.fillMaxSize()) { // New Column to stack header and pager
+            // --- NEW: Overarching Heading ---
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.Black) // Pure black background
+                    .padding(horizontal = 16.dp, vertical = 8.dp) // Padding for visual spacing
+                    .windowInsetsPadding(WindowInsets.statusBars), // Respect status bar
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = { showSettings = true }) { // Settings button
+                    Icon(Icons.Default.Settings, contentDescription = "Settings", tint = Color.White)
+                }
+                Text(
+                    text = "Mindful Growth", // App Title
+                    color = Color.White,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontFamily = FontFamily.Monospace
+                )
+                IconButton(onClick = { /* TODO: Handle Info click */ }) { // Info button
+                    Icon(Icons.Default.Info, contentDescription = "Info", tint = Color.White)
+                }
             }
-        }
 
-        // --- OLED Glass Navigation Dock ---
+            // --- Content Pager (now takes remaining height) ---
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.weight(1f) // Takes remaining vertical space
+            ) { page ->
+                when (navItems[page]) {
+                    NavigationItem.Home -> HomeScreen()
+                    NavigationItem.Feed -> FeedScreen()
+                    NavigationItem.Stats -> StatsScreen()
+                    NavigationItem.Garden -> GardenScreen()
+                }
+            }
+        } // End of Column
+
+        // --- OLED Glass Navigation Dock --- (Remains at bottom of the Box)
         LiquidGlassBottomNavigation(
             navItems = navItems,
             pagerState = pagerState,
@@ -103,35 +134,11 @@ fun MindfulGrowthApp() {
             modifier = Modifier.align(Alignment.BottomCenter)
         )
 
-        // --- Floating Gear Button for Settings ---
-        GlassCard(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(16.dp)
-                .windowInsetsPadding(WindowInsets.statusBars)
-                .size(48.dp)
-                .clickable(onClick = { showSettings = true }),
-            shape = RoundedCornerShape(50)
-        ) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Settings,
-                    contentDescription = "Settings",
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-        }
-
         // --- Settings Modal Bottom Sheet ---
         ModalBottomSheet(
             visible = showSettings,
             onDismiss = { showSettings = false }
         ) {
-            // Content for the settings screen
             SettingsScreen(onClose = { showSettings = false })
         }
     }

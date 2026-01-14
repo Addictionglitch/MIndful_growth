@@ -23,7 +23,6 @@ import com.example.mindfulgrowth.ui.screens.home.HomeScreen
 import com.example.mindfulgrowth.ui.screens.profile.ProfileScreen
 import com.example.mindfulgrowth.ui.screens.settings.SettingsScreen
 import com.example.mindfulgrowth.ui.screens.stats.StatsScreen
-import com.example.mindfulgrowth.ui.components.ModalBottomSheet // Import ModalBottomSheet
 import kotlinx.coroutines.launch
 
 object Routes {
@@ -42,14 +41,13 @@ sealed class Screen(val route: String) {
 fun AppNavHost() {
     val navController = rememberNavController()
     var showInfoDialog by remember { mutableStateOf(false) }
-    var showSettings by remember { mutableStateOf(false) } // State for showing settings modal
 
     Scaffold(
         containerColor = Color.Transparent,
         topBar = {
             AppTopBar(
                 onInfoClick = { showInfoDialog = true },
-                onSettingsClick = { showSettings = true } // Modified to show modal
+                onSettingsClick = { navController.navigate(Routes.SETTINGS) }
             )
         }
     ) { innerPadding ->
@@ -61,19 +59,13 @@ fun AppNavHost() {
             composable(Routes.MAIN_PAGER) {
                 MainPagerScreen()
             }
-            // Removed composable(Routes.SETTINGS) as SettingsScreen is now a modal
+            composable(Routes.SETTINGS) {
+                SettingsScreen()
+            }
         }
 
         if (showInfoDialog) {
             InfoDialog(onDismiss = { showInfoDialog = false })
-        }
-
-        // Settings Modal Bottom Sheet
-        ModalBottomSheet(
-            visible = showSettings,
-            onDismiss = { showSettings = false }
-        ) {
-            SettingsScreen(onClose = { showSettings = false })
         }
     }
 }
