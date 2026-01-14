@@ -1,3 +1,4 @@
+
 package com.example.mindfulgrowth.ui.screens.customize
 
 import android.graphics.BlurMaskFilter
@@ -292,7 +293,7 @@ fun HeroGlassCard(
             .fillMaxWidth()
             .height(140.dp)
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(24.dp)
+        cornerRadius = 24.dp
     ) {
         Row(
             modifier = Modifier
@@ -346,7 +347,7 @@ fun StandardGlassCard(
         modifier = Modifier
             .aspectRatio(0.75f)
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(24.dp)
+        cornerRadius = 24.dp
     ) {
         Column(
             modifier = Modifier

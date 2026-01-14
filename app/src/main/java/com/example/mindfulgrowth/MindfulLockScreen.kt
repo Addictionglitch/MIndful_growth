@@ -1,3 +1,4 @@
+
 package com.example.mindfulgrowth
 
 import android.graphics.RenderEffect
@@ -79,7 +80,7 @@ fun MindfulLockScreen(
                     modifier = Modifier
                         .width(200.dp)
                         .height(50.dp),
-                    shape = RoundedCornerShape(30.dp)
+                    cornerRadius = 30.dp
                 ) {
                     Row(
                         horizontalArrangement = Arrangement.Center,

@@ -1,1 +1,0 @@
-// This file is now deprecated and has been decommissioned. Its functionality is replaced by Navigation.kt.

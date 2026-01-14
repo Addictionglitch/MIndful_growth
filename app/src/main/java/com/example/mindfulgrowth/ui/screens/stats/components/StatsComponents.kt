@@ -120,7 +120,7 @@ fun FocusHeroCard(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
-    GlassCard(modifier = modifier, shape = RoundedCornerShape(24.dp)) {
+    GlassCard(modifier = modifier, cornerRadius = 24.dp) {
         Column(
             modifier = Modifier.padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -148,7 +148,7 @@ fun MetricCard(
     icon: ImageVector,
     modifier: Modifier = Modifier
 ) {
-    GlassCard(modifier = modifier, shape = RoundedCornerShape(16.dp)) {
+    GlassCard(modifier = modifier, cornerRadius = 16.dp) {
         Column(
             modifier = Modifier.padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,

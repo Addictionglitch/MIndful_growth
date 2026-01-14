@@ -1,3 +1,4 @@
+
 package com.example.mindfulgrowth.ui.screens.settings
 
 import android.content.Context
@@ -194,7 +195,7 @@ fun SettingsScreen(
                 item {
                     GlassCard(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(24.dp)
+                        cornerRadius = 24.dp
                     ) {
                         Column(Modifier.padding(20.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -222,7 +223,7 @@ fun SettingsScreen(
             // --- DISPLAY SECTION ---
             item {
                 SettingsSectionTitle("VISUAL_ARRAY")
-                GlassCard(shape = RoundedCornerShape(24.dp)) {
+                GlassCard(cornerRadius = 24.dp) {
                     Column(
                         modifier = Modifier.padding(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -264,7 +265,7 @@ fun SettingsScreen(
             // --- BEHAVIOR SECTION ---
             item {
                 SettingsSectionTitle("BEHAVIOR_MATRIX")
-                GlassCard(shape = RoundedCornerShape(24.dp)) {
+                GlassCard(cornerRadius = 24.dp) {
                     Column(
                         modifier = Modifier.padding(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)

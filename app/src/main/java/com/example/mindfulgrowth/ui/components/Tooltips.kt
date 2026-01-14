@@ -1,3 +1,4 @@
+
 package com.example.mindfulgrowth.ui.components
 
 import androidx.compose.animation.*
@@ -58,7 +59,7 @@ fun TooltipPopup(
         ) {
             GlassCard(
                 modifier = modifier,
-                shape = RoundedCornerShape(4.dp)
+                cornerRadius = 4.dp
             ) {
                 Text(
                     text = text,

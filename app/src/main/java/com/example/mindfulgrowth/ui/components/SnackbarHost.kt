@@ -1,3 +1,4 @@
+
 package com.example.mindfulgrowth.ui.components
 
 import androidx.compose.animation.*
@@ -97,7 +98,7 @@ private fun CustomSnackbar(
         modifier = modifier
             .fillMaxWidth()
             .padding(spacing.medium),
-        shape = RoundedCornerShape(16.dp)
+        cornerRadius = 16.dp
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),

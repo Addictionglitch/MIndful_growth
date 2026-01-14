@@ -1,3 +1,4 @@
+
 package com.example.mindfulgrowth.ui.components
 
 import androidx.compose.animation.*
@@ -73,7 +74,7 @@ fun ModalBottomSheet(
                         indication = null,
                         interactionSource = remember { MutableInteractionSource() }
                     ),
-                shape = RoundedCornerShape(28.dp)
+                cornerRadius = 28.dp
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth().padding(extraLargeSpacing),
