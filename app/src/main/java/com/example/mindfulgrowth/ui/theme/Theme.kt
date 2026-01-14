@@ -1,102 +1,86 @@
+
 package com.example.mindfulgrowth.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.*
+import android.app.Activity
+import android.os.Build
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 
-// 1. Define Colors
+// Centralized Brush Definition
 @Immutable
-data class MindfulColors(
-    val goldPrimary: Color = Color(0xFFC69C6D),
-    val goldLight: Color = Color(0xFFD4B896),
-    val goldDark: Color = Color(0xFFB88A5A),
-    val greenAccent: Color = Color(0xFF5B8C5A),
-
-    // Glass / Dark UI Colors
-    val glassBackground: Color = Color(0x26FFFFFF),
-    val glassBorder: Color = Color(0x33FFFFFF),
-
-    // Gradients
-    val gradientStart: Color = Color(0xFF2C211B),
-    val gradientMid: Color = Color(0xFF221E1C),
-    val gradientEnd: Color = Color(0xFF1A1F1F),
-
-    val surfaceCard: Color = Color(0xFF1E1E1E),
-    val textPrimary: Color = Color(0xFFEADDCD),
-    val textSecondary: Color = Color(0xFF9D8D7E),
-
-    // Status
-    val warning: Color = Color(0xFFFFA726)
+data class MindfulBrushes(
+    val primaryBrush: Brush = Brush.radialGradient(
+        colors = listOf(Color.DarkGray.copy(alpha = 0.3f), VoidBlack)
+    )
 )
 
-// 2. Define Spacing
-@Immutable
-data class MindfulSpacing(
-    val sm: Dp = 8.dp,
-    val md: Dp = 16.dp,
-    val lg: Dp = 24.dp,
-    val xl: Dp = 32.dp
+val LocalMindfulBrushes = staticCompositionLocalOf { MindfulBrushes() }
+
+
+private val DarkColorScheme = darkColorScheme(
+    primary = Gold,
+    secondary = NeonCyan,
+    tertiary = NeonGreen,
+    background = Color.Black,
+    surface = Color.Black,
+    onPrimary = Color.Black,
+    onSecondary = Color.Black,
+    onTertiary = Color.Black,
+    onBackground = Color.White,
+    onSurface = Color.White,
+    surfaceVariant = Color(0xFF1C1C1E)
 )
 
-// 3. Define Shapes
-@Immutable
-data class MindfulShapes(
-    val small: Dp = 8.dp,
-    val medium: Dp = 16.dp,
-    val large: Dp = 24.dp,
-    val full: Dp = 999.dp
+private val LightColorScheme = lightColorScheme(
+    primary = Gold,
+    secondary = NeonCyan,
+    tertiary = NeonGreen
 )
 
-// 4. Create CompositionLocals
-val LocalMindfulColors = staticCompositionLocalOf { MindfulColors() }
-val LocalMindfulSpacing = staticCompositionLocalOf { MindfulSpacing() }
-val LocalMindfulShapes = staticCompositionLocalOf { MindfulShapes() }
-
-// 5. The Main Theme Object
-object MindfulTheme {
-    val colors: MindfulColors
-        @Composable get() = LocalMindfulColors.current
-
-    val spacing: MindfulSpacing
-        @Composable get() = LocalMindfulSpacing.current
-
-    val shapes: MindfulShapes
-        @Composable get() = LocalMindfulShapes.current
-}
-
-// 6. The Theme Composable Function
 @Composable
 fun MindfulGrowthTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = true, // Force dark theme
+    dynamicColor: Boolean = false, // Disable dynamic color for consistency
     content: @Composable () -> Unit
 ) {
-    val mindfulColors = MindfulColors()
-
-    val colorScheme = darkColorScheme(
-        primary = mindfulColors.goldPrimary,
-        background = mindfulColors.gradientEnd,
-        surface = mindfulColors.surfaceCard,
-        onPrimary = Color.Black,
-        onBackground = mindfulColors.textPrimary,
-        onSurface = mindfulColors.textPrimary
-    )
-
-    CompositionLocalProvider(
-        LocalMindfulColors provides mindfulColors,
-        LocalMindfulSpacing provides MindfulSpacing(),
-        LocalMindfulShapes provides MindfulShapes()
-    ) {
-        // FIXED: Now passing 'typography' so custom fonts work
-        MaterialTheme(
-            colorScheme = colorScheme,
-            typography = typography, 
-            content = content
-        )
+    val colorScheme = when {
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+            val context = LocalContext.current
+            if (darkTheme) dynamicDarkColorScheme(context) else dynamicDarkColorScheme(context)
+        }
+        darkTheme -> DarkColorScheme
+        else -> LightColorScheme
     }
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as Activity).window
+            window.statusBarColor = Color.Transparent.toArgb() // Make status bar transparent
+            window.navigationBarColor = Color.Transparent.toArgb() // Make nav bar transparent
+            WindowCompat.setDecorFitsSystemWindows(window, false) // Go Edge-to-Edge
+        }
+    }
+
+    MaterialTheme(
+        colorScheme = colorScheme,
+        typography = Typography,
+        content = content
+    )
 }
+
+// Easy access extension
+val MaterialTheme.brushes: MindfulBrushes
+    @Composable
+    get() = LocalMindfulBrushes.current

@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -72,12 +73,10 @@ fun ModalBottomSheet(
                         indication = null,
                         interactionSource = remember { MutableInteractionSource() }
                     ),
-                cornerRadius = 28.dp,
-                bloom = true,
-                contentPadding = PaddingValues(extraLargeSpacing)
+                shape = RoundedCornerShape(28.dp)
             ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().padding(extraLargeSpacing),
                     content = content
                 )
             }

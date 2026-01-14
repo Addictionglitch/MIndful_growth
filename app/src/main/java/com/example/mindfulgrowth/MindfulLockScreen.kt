@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Brush
 import com.example.mindfulgrowth.model.defaultTrees
+import com.example.mindfulgrowth.ui.components.GlassCard
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -74,10 +75,11 @@ fun MindfulLockScreen(
             // Only show the frosted card if NOT in ambient mode (save pixels)
             // Or show simple text if you want it visible in AOD too.
             if (!isAmbient) {
-                FrostedGlassCard(
+                GlassCard(
                     modifier = Modifier
                         .width(200.dp)
-                        .height(50.dp)
+                        .height(50.dp),
+                    shape = RoundedCornerShape(30.dp)
                 ) {
                     Row(
                         horizontalArrangement = Arrangement.Center,
@@ -127,37 +129,5 @@ fun ClockContent(currentTime: LocalDateTime, textColor: Color) {
             color = textColor.copy(alpha = 0.6f),
             letterSpacing = 2.sp
         )
-    }
-}
-
-// --- COMPONENT: Real Frosted Glass (Android 12+) ---
-@Composable
-fun FrostedGlassCard(
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
-) {
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(30.dp))
-            .background(Color.White.copy(alpha = 0.06f)) // subtle tint
-            .border(
-                width = 1.dp,
-                brush = Brush.verticalGradient(
-                    listOf(
-                        Color.White.copy(alpha = 0.25f),
-                        Color.White.copy(alpha = 0.06f)
-                    )
-                ),
-                shape = RoundedCornerShape(30.dp)
-            )
-    ) {
-        // Apply a very small native blur only to the background layer
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            Box(modifier = Modifier.matchParentSize().graphicsLayer {
-                val blur = RenderEffect.createBlurEffect(4f, 4f, Shader.TileMode.CLAMP)
-                renderEffect = blur.asComposeRenderEffect()
-            })
-        }
-        content()
     }
 }

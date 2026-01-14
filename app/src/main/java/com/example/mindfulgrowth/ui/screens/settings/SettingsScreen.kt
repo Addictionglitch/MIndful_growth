@@ -39,6 +39,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.mindfulgrowth.ui.components.GlassCard
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -193,8 +194,7 @@ fun SettingsScreen(
                 item {
                     GlassCard(
                         modifier = Modifier.fillMaxWidth(),
-                        borderColor = CrimsonCore,
-                        glowAlpha = 0.4f
+                        shape = RoundedCornerShape(24.dp)
                     ) {
                         Column(Modifier.padding(20.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -222,7 +222,7 @@ fun SettingsScreen(
             // --- DISPLAY SECTION ---
             item {
                 SettingsSectionTitle("VISUAL_ARRAY")
-                GlassCard {
+                GlassCard(shape = RoundedCornerShape(24.dp)) {
                     Column(
                         modifier = Modifier.padding(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -264,7 +264,7 @@ fun SettingsScreen(
             // --- BEHAVIOR SECTION ---
             item {
                 SettingsSectionTitle("BEHAVIOR_MATRIX")
-                GlassCard {
+                GlassCard(shape = RoundedCornerShape(24.dp)) {
                     Column(
                         modifier = Modifier.padding(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -351,64 +351,6 @@ fun SettingsSectionTitle(title: String) {
             fontFamily = PixelFont,
             letterSpacing = 2.sp
         )
-    }
-}
-
-/**
- * The Main Glass Container.
- * Features: Outer Glow (Shadow), Refractive Border, Gradient Surface.
- */
-@Composable
-fun GlassCard(
-    modifier: Modifier = Modifier,
-    borderColor: Color? = null,
-    glowAlpha: Float = 0.15f,
-    content: @Composable BoxScope.() -> Unit
-) {
-    Box(
-        modifier = modifier
-            // 1. Outer Glow (Elevation)
-            .neonGlow(color = borderColor ?: CrimsonCore, radius = 40f, alpha = glowAlpha)
-            .clip(RoundedCornerShape(24.dp))
-    ) {
-        // 2. Base Dark Glass Layer
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .background(Color.Black.copy(alpha = 0.6f))
-        )
-
-        // 3. Surface Gradient (Top-down shine)
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            Color.White.copy(alpha = 0.05f),
-                            Color.Transparent
-                        )
-                    )
-                )
-        )
-
-        // 4. Refractive Border (Light on top, Shadow on bottom)
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .border(
-                    width = 1.dp,
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            (borderColor ?: Color.White).copy(alpha = 0.4f), // Top Catchlight
-                            Color.Transparent,
-                            (borderColor ?: Color.Black).copy(alpha = 0.4f)  // Bottom Shadow
-                        )
-                    ),
-                    shape = RoundedCornerShape(24.dp)
-                )
-        )
-        Box(modifier = Modifier.fillMaxWidth(), content = content)
     }
 }
 

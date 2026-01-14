@@ -1,89 +1,99 @@
+
 package com.example.mindfulgrowth.ui.screens.stats
 
-import androidx.compose.foundation.background
+import androidx.compose.animation.*
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Forest
-import androidx.compose.material.icons.rounded.Smartphone
+import androidx.compose.material.icons.filled.Yard
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.mindfulgrowth.viewmodel.StatsRange
-import com.example.mindfulgrowth.viewmodel.StatsViewModel
+import com.example.mindfulgrowth.ui.screens.stats.components.FocusHeroCard
+import com.example.mindfulgrowth.ui.screens.stats.components.MetricCard
+import com.example.mindfulgrowth.ui.screens.stats.components.StatsLineGraph
 
+// Refactored to remove NavHost-specific parameters
 @Composable
 fun StatsScreen(
     viewModel: StatsViewModel = viewModel()
 ) {
-    val state by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // Ensure we are viewing Weekly stats by default
-    LaunchedEffect(Unit) {
-        viewModel.setRange(StatsRange.WEEK)
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        when (val state = uiState) {
+            is StatsUiState.Loading -> CircularProgressIndicator()
+            is StatsUiState.Success -> StatsScreenContent(statsData = state.data)
+            is StatsUiState.Error -> {
+                // Stylized error component can be placed here
+            }
+        }
     }
+}
 
-    LazyColumn(
+@Composable
+fun StatsScreenContent(statsData: StatsData) {
+    var scrubbingValue by remember { mutableStateOf<Float?>(null) }
+    val isScrubbing = scrubbingValue != null
+
+    val animatedTotalFocus by animateFloatAsState(
+        targetValue = statsData.weeklyFocusData.sum(),
+        animationSpec = tween(1000),
+        label = "TotalFocusAnimation"
+    )
+
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black) // Pure Black Background
-            .padding(horizontal = 20.dp),
-        contentPadding = PaddingValues(top = 48.dp, bottom = 120.dp),
-        verticalArrangement = Arrangement.spacedBy(24.dp)
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // --- CONTENT AREA (No Animation) ---
-        item {
-            // Direct state switching without AnimatedContent to prevent jank
-            when (val targetState = state) {
-                is StatsUiState.Loading -> {
-                    StatsLoadingSkeleton()
-                }
-                is StatsUiState.Error -> {
-                    StatsErrorState(
-                        message = targetState.message,
-                        onRetry = viewModel::retry
-                    )
-                }
-                is StatsUiState.Success -> {
-                    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
-                        // 1. Weekly Hero Graph
-                        FocusHeroCard(
-                            timeSaved = targetState.totalFocusTime,
-                            trend = targetState.focusTimeTrend,
-                            isTrendPositive = targetState.isTrendPositive,
-                            graphData = targetState.graphData
-                        )
+        AnimatedVisibility(
+            visible = true,
+            enter = fadeIn(animationSpec = tween(durationMillis = 500)) +
+                    slideInVertically(initialOffsetY = { it / 2 }, animationSpec = tween(durationMillis = 500))
+        ) {
+            FocusHeroCard(
+                title = "Total Focus (7d)",
+                value = scrubbingValue ?: animatedTotalFocus,
+                isScrubbing = isScrubbing,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(250.dp)
+            ) {
+                StatsLineGraph(
+                    data = statsData.weeklyFocusData,
+                    onScrub = { scrubbingValue = it },
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
 
-                        // 2. Key Metrics Grid
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            MetricCard(
-                                title = "UNLOCKS",
-                                value = "${targetState.pickupsCount}",
-                                icon = Icons.Rounded.Smartphone,
-                                contentDesc = "${targetState.pickupsCount} phone unlocks this week",
-                                modifier = Modifier.weight(1f).height(140.dp)
-                            )
-                            MetricCard(
-                                title = "TREES",
-                                value = "${targetState.treesGrown}",
-                                icon = Icons.Rounded.Forest,
-                                contentDesc = "${targetState.treesGrown} trees grown in your forest",
-                                modifier = Modifier.weight(1f).height(140.dp)
-                            )
-                        }
+        Spacer(modifier = Modifier.height(24.dp))
 
-                        // 3. Goal Progress
-                        GoalProgressCard(
-                            progress = targetState.goalProgress,
-                            target = targetState.goalTarget
-                        )
-                    }
-                }
+        AnimatedVisibility(
+            visible = true,
+            enter = fadeIn(animationSpec = tween(delayMillis = 300, durationMillis = 500)) +
+                    slideInVertically(initialOffsetY = { it }, animationSpec = tween(delayMillis = 300, durationMillis = 500))
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                MetricCard(
+                    title = "Trees Grown",
+                    value = "12",
+                    icon = Icons.Default.Yard,
+                    modifier = Modifier.weight(1f)
+                )
             }
         }
     }

@@ -9,4 +9,20 @@
     <string name="settings_wake_gesture_title">Wake Gesture</string>
     <string name="settings_single_tap">Single Tap</string>
     <string name="settings_double_tap">Double Tap</string>
+
+    <!-- Stats Screen -->
+    <string name="stats_weekly_focus">WEEKLY FOCUS</string>
+    <string name="stats_focus_label">FOCUS: %1$s</string> <!-- %1$s is a placeholder for the day -->
+    <string name="stats_daily_goal">DAILY GOAL</string>
+    <string name="stats_target_progress">%1$d%% / %2$s</string> <!-- For "60% / 4h" -->
+    <string name="stats_sync_error">SYNC ERROR</string>
+    <string name="stats_retry">RETRY</string>
+
+    <!-- Accessibility -->
+    <string name="stats_progress_description">%1$d percent</string>
+
+    <!-- Screen Titles -->
+    <string name="screen_title_stats">Stats</string>
+    <string name="screen_title_garden">Garden</string>
+    <string name="screen_title_settings">Settings</string>
 </resources>

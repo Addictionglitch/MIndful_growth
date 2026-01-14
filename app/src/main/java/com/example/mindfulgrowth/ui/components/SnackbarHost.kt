@@ -3,6 +3,7 @@ package com.example.mindfulgrowth.ui.components
 import androidx.compose.animation.*
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -96,8 +97,7 @@ private fun CustomSnackbar(
         modifier = modifier
             .fillMaxWidth()
             .padding(spacing.medium),
-        bloom = true,
-        bloomIntensity = 0.08f
+        shape = RoundedCornerShape(16.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),

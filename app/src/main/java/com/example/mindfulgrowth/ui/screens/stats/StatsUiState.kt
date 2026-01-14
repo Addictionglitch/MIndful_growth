@@ -1,25 +1,16 @@
+
 package com.example.mindfulgrowth.ui.screens.stats
 
-import com.example.mindfulgrowth.viewmodel.StatsRange
+// This is the single source of truth for your UI State.
+data class StatsData(
+    val weeklyFocusData: List<Float> = emptyList(),
+    val weeklyFocusLabels: List<String> = emptyList(),
+    val dailyGoalProgress: Float = 0f,
+    val dailyGoalTarget: String = "0h"
+)
 
 sealed interface StatsUiState {
-    data object Loading : StatsUiState
-    
-    data class Error(
-        val message: String,
-        val isPermissionError: Boolean = false
-    ) : StatsUiState
-
-    data class Success(
-        val selectedRange: StatsRange,
-        // Formatted strings for display
-        val totalFocusTime: String, 
-        val focusTimeTrend: String, // e.g., "+12%" or "-5%"
-        val isTrendPositive: Boolean,
-        val pickupsCount: Int,
-        val treesGrown: Int,
-        val goalProgress: Float, // 0.0f to 1.0f
-        val goalTarget: String, // e.g. "60m"
-        val graphData: List<Float>
-    ) : StatsUiState
+    object Loading : StatsUiState
+    data class Success(val data: StatsData) : StatsUiState
+    data class Error(val message: String) : StatsUiState
 }

@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.mindfulgrowth.ui.components.GlassCard
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -291,9 +292,7 @@ fun HeroGlassCard(
             .fillMaxWidth()
             .height(140.dp)
             .clickable(onClick = onClick),
-        borderColor = CrimsonCore,
-        glowAlpha = 0.06f,
-        borderWidth = 2.dp
+        shape = RoundedCornerShape(24.dp)
     ) {
         Row(
             modifier = Modifier
@@ -343,17 +342,11 @@ fun StandardGlassCard(
     item: GrowthItem,
     onClick: () -> Unit
 ) {
-    val borderColor = if (item.isSelected) CrimsonCore else Color.White.copy(alpha = 0.5f)
-    val glowAlpha = if (item.isSelected) 0.7f else 0.0f
-    val borderWidth = if (item.isSelected) 2.dp else 1.dp
-
     GlassCard(
         modifier = Modifier
             .aspectRatio(0.75f)
             .clickable(onClick = onClick),
-        borderColor = borderColor,
-        glowAlpha = glowAlpha,
-        borderWidth = borderWidth
+        shape = RoundedCornerShape(24.dp)
     ) {
         Column(
             modifier = Modifier
@@ -414,52 +407,6 @@ fun StandardGlassCard(
 }
 
 // --- CORE VISUAL COMPONENTS ---
-
-@Composable
-fun GlassCard(
-    modifier: Modifier = Modifier,
-    borderColor: Color? = null,
-    glowAlpha: Float = 0.15f,
-    borderWidth: Dp = 1.dp,
-    content: @Composable BoxScope.() -> Unit
-) {
-    Box(
-        modifier = modifier
-            .neonGlow(color = borderColor ?: CrimsonCore, radius = 100f, alpha = glowAlpha)
-            .clip(RoundedCornerShape(24.dp))
-    ) {
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .background(Color.Black.copy(alpha = 0.9f))
-        )
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(Color.White.copy(alpha = 0.05f), Color.Transparent)
-                    )
-                )
-        )
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .border(
-                    width = borderWidth,
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            (borderColor ?: Color.White).copy(alpha = 0.4f),
-                            Color.Transparent,
-                            (borderColor ?: Color.Black).copy(alpha = 0.4f)
-                        )
-                    ),
-                    shape = RoundedCornerShape(24.dp)
-                )
-        )
-        Box(modifier = Modifier.fillMaxWidth(), content = content)
-    }
-}
 
 @Composable
 fun FilterChip(text: String, isSelected: Boolean, onClick: () -> Unit) {

@@ -1,264 +1,218 @@
+
 package com.example.mindfulgrowth.ui.navigation
 
-import android.graphics.BlurMaskFilter
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.Canvas // FIXED: Added import
+import android.graphics.RenderEffect
+import android.graphics.Shader
+import android.os.Build
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Yard
+import androidx.compose.material3.Icon
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.asComposeRenderEffect
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.*
-import com.example.mindfulgrowth.ui.theme.SystemConfigColors
-import kotlinx.coroutines.launch
-import kotlin.math.absoluteValue
-
-import com.example.mindfulgrowth.ui.screens.customize.CustomizeScreen
-import com.example.mindfulgrowth.ui.screens.settings.SettingsScreen
+import com.example.mindfulgrowth.ui.screens.GardenScreen
+import com.example.mindfulgrowth.ui.screens.SettingsScreen
 import com.example.mindfulgrowth.ui.screens.stats.StatsScreen
+import kotlinx.coroutines.launch
 
-sealed class Screen(val index: Int, val title: String, val icon: ImageVector) {
-    object Stats : Screen(0, "Stats", Icons.Rounded.BarChart)
-    object Customize : Screen(1, "Customize", Icons.Rounded.Palette)
-    object Settings : Screen(2, "Settings", Icons.Rounded.Settings)
+// --- Constants & Configuration ---
+private val NeonAccent = Color(0xFF00FFC2)
+private val DockGlassColor = Color(0xFF0A0A0A).copy(alpha = 0.85f)
+private val DockShape = RoundedCornerShape(32.dp)
+private val GhostLightIndicatorSize = 80.dp
+
+// --- Data Model for Navigation ---
+sealed class NavigationItem(val route: String, val icon: ImageVector, val title: String) {
+    object Stats : NavigationItem("stats", Icons.Default.BarChart, "Stats")
+    object Garden : NavigationItem("garden", Icons.Default.Yard, "Garden")
+    object Settings : NavigationItem("settings", Icons.Default.Settings, "Settings")
 }
 
 @Composable
 fun MindfulGrowthApp() {
-    val pagerState = rememberPagerState(pageCount = { 3 })
+    val navItems = listOf(NavigationItem.Stats, NavigationItem.Garden, NavigationItem.Settings)
+    val pagerState = rememberPagerState(pageCount = { navItems.size })
     val coroutineScope = rememberCoroutineScope()
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Transparent)
+            .background(Color.Transparent) // MainActivity provides the gradient
     ) {
-        // 1. HORIZONTAL PAGER (Enables Swiping)
+        // --- Content Pager ---
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier.fillMaxSize(),
-            userScrollEnabled = true
+            modifier = Modifier.fillMaxSize()
         ) { page ->
-            when (page) {
-                0 -> StatsScreen()
-                1 -> CustomizeScreen()
-                2 -> SettingsScreen()
+            when (navItems[page]) {
+                NavigationItem.Stats -> StatsScreen()
+                NavigationItem.Garden -> GardenScreen()
+                NavigationItem.Settings -> SettingsScreen()
             }
         }
 
-        // 2. NAV BAR CONTAINER WITH BLUR & FADE
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .height(150.dp)
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            Color.Transparent,
-                            Color(SystemConfigColors.PRIMARY_BG).copy(alpha = 0.4f),
-                            Color(SystemConfigColors.PRIMARY_BG)
-                        )
-                    )
-                )
-                .drawBehind {
-                    drawIntoCanvas { canvas ->
-                        val paint = androidx.compose.ui.graphics.Paint()
-                        paint.asFrameworkPaint().maskFilter = BlurMaskFilter(50f, BlurMaskFilter.Blur.NORMAL)
-                        canvas.drawRect(0f, 0f, size.width, size.height, androidx.compose.ui.graphics.Paint().apply {
-                            asFrameworkPaint().apply {
-                                color = android.graphics.Color.TRANSPARENT
-                                maskFilter = BlurMaskFilter(60f, BlurMaskFilter.Blur.NORMAL)
-                            }
-                        })
-                    }
+        // --- OLED Glass Navigation Dock ---
+        LiquidGlassBottomNavigation(
+            navItems = navItems,
+            pagerState = pagerState,
+            onTabSelected = { index ->
+                coroutineScope.launch {
+                    pagerState.animateScrollToPage(index)
                 }
-        ) {
-            LiquidGlassBottomNavigation(
-                pagerState = pagerState,
-                onTabSelected = { index ->
-                    coroutineScope.launch {
-                        pagerState.animateScrollToPage(index)
-                    }
-                },
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 15.dp, start = 20.dp, end = 20.dp)
-            )
-        }
+            },
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
     }
 }
 
 @Composable
 private fun LiquidGlassBottomNavigation(
-    pagerState: PagerState,
+    navItems: List<NavigationItem>,
+    pagerState: androidx.compose.foundation.pager.PagerState,
     onTabSelected: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val items = listOf(Screen.Stats, Screen.Customize, Screen.Settings)
-
-    // FIXED: Changed to BoxWithConstraints to correctly use maxWidth
     BoxWithConstraints(
         modifier = modifier
-            .height(68.dp) // FIXED: Made 2px/4dp skinnier (72dp -> 68dp)
             .fillMaxWidth()
-            .clip(RoundedCornerShape(36.dp))
+            .windowInsetsPadding(WindowInsets.navigationBars)
+            .padding(bottom = 16.dp, start = 24.dp, end = 24.dp)
     ) {
+        val tabWidth = maxWidth / navItems.size
 
-        val width = maxWidth
-        val tabWidth = width / items.size
-
-        // --- BACKGROUND LAYERS ---
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .background(Color(SystemConfigColors.BOTTOM_NAV_BG))
+        val indicatorOffset by animateDpAsState(
+            targetValue = (tabWidth * pagerState.currentPage) + (tabWidth / 2) - (GhostLightIndicatorSize / 2),
+            animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium),
+            label = "IndicatorOffset"
         )
-        Box(
+
+        Canvas(
             modifier = Modifier
-                .matchParentSize()
+                .offset(x = indicatorOffset)
+                .size(GhostLightIndicatorSize)
+        ) {
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(NeonAccent.copy(alpha = 0.3f), Color.Transparent),
+                ),
+                radius = size.minDimension / 2.0f
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(64.dp)
+                .glassmorphism()
                 .border(
                     width = 1.dp,
                     brush = Brush.verticalGradient(
-                        colors = listOf(Color(SystemConfigColors.GLASS_BORDER), Color.Transparent, Color(SystemConfigColors.GLASS_BORDER).copy(alpha = 0.5f))
+                        colors = listOf(Color.White.copy(0.1f), Color.White.copy(0.02f))
                     ),
-                    shape = RoundedCornerShape(36.dp)
-                )
-        )
-
-        // --- LIQUID MORPHING INDICATOR ---
-        LiquidIndicator(
-            pagerState = pagerState,
-            tabWidth = tabWidth,
-            totalHeight = 68.dp // Match container height
-        )
-
-        // --- ICON LAYER ---
-        Row(
-            modifier = Modifier.fillMaxSize(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
+                    shape = DockShape
+                ),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            items.forEachIndexed { index, screen ->
+            navItems.forEachIndexed { index, item ->
                 val isSelected = pagerState.currentPage == index
-                val interactionSource = remember { MutableInteractionSource() }
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .width(tabWidth)
-                        .clickable(
-                            interactionSource = interactionSource,
-                            indication = null
-                        ) { onTabSelected(index) },
-                    contentAlignment = Alignment.Center
-                ) {
-                    val iconColor by animateColorAsState(
-                        targetValue = if (isSelected) Color(SystemConfigColors.BOTTOM_NAV_ICON_ACTIVE) else Color(SystemConfigColors.BOTTOM_NAV_ICON_INACTIVE),
-                        animationSpec = tween(300),
-                        label = "Color"
-                    )
-
-                    val scale by animateFloatAsState(
-                        targetValue = if (isSelected) 1.2f else 1.0f,
-                        animationSpec = spring(
-                            dampingRatio = 0.5f,
-                            stiffness = Spring.StiffnessLow
-                        ),
-                        label = "Scale"
-                    )
-
-                    Icon(
-                        imageVector = screen.icon,
-                        contentDescription = screen.title,
-                        tint = iconColor,
-                        modifier = Modifier
-                            .size(28.dp)
-                            .scale(scale)
-                    )
-                }
+                DockIcon(
+                    item = item,
+                    isSelected = isSelected,
+                    modifier = Modifier.weight(1f),
+                    onClick = { onTabSelected(index) }
+                )
             }
         }
     }
 }
 
 @Composable
-fun LiquidIndicator(
-    pagerState: PagerState,
-    tabWidth: Dp,
-    totalHeight: Dp
+private fun DockIcon(
+    item: NavigationItem,
+    isSelected: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
 ) {
-    val density = LocalDensity.current
+    val scale by animateFloatAsState(
+        targetValue = if (isSelected) 1.1f else 1.0f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+        label = "IconScale"
+    )
 
-    val currentOffset = pagerState.currentPage + pagerState.currentPageOffsetFraction
-    val tabWidthPx = with(density) { tabWidth.toPx() }
-    val heightPx = with(density) { totalHeight.toPx() }
+    val iconColor by animateColorAsState(
+        targetValue = if (isSelected) NeonAccent else Color.White.copy(alpha = 0.4f),
+        animationSpec = spring(),
+        label = "IconColor"
+    )
 
-    val stretchFactor = 1f + (0.4f * (1f - (pagerState.currentPageOffsetFraction.absoluteValue - 0.5f).absoluteValue * 2))
-
-    val blobWidth = 60.dp
-    val blobWidthPx = with(density) { blobWidth.toPx() } * stretchFactor
-
-    val indicatorCenterX = (currentOffset * tabWidthPx) + (tabWidthPx / 2)
-
-    // FIXED: Using Canvas composable to resolve DrawScope
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        val left = indicatorCenterX - (blobWidthPx / 2)
-        val top = (heightPx / 2) - (blobWidthPx / 2)
-
-        // 1. Inner Glow
-        drawRoundRect(
-            brush = Brush.radialGradient(
-                colors = listOf(
-                    Color(SystemConfigColors.NEON_GREEN_ACCENT).copy(alpha = 0.15f),
-                    Color(SystemConfigColors.ACCENT_RED_PRIMARY).copy(alpha = 0.05f),
-                    Color.Transparent
-                ),
-                center = Offset(indicatorCenterX, heightPx/2),
-                radius = blobWidthPx
+    Box(
+        modifier = modifier
+            .fillMaxHeight()
+            .clickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() },
+                onClick = onClick
             ),
-            topLeft = Offset(left, top),
-            size = androidx.compose.ui.geometry.Size(blobWidthPx, blobWidthPx),
-            cornerRadius = CornerRadius(blobWidthPx / 2)
-        )
-
-        // 2. Glass Border
-        drawRoundRect(
-            brush = Brush.linearGradient(
-                colors = listOf(
-                    Color.White.copy(alpha = 0.5f),
-                    Color.White.copy(alpha = 0.05f),
-                    Color.White.copy(alpha = 0.2f)
-                ),
-                start = Offset(left, top),
-                end = Offset(left + blobWidthPx, top + blobWidthPx)
-            ),
-            topLeft = Offset(left, top),
-            size = androidx.compose.ui.geometry.Size(blobWidthPx, blobWidthPx),
-            cornerRadius = CornerRadius(blobWidthPx / 2),
-            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3f)
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = item.icon,
+            contentDescription = item.title,
+            tint = iconColor,
+            modifier = Modifier
+                .size(24.dp)
+                .scale(scale)
+                .shadow(
+                    elevation = if (isSelected) 8.dp else 0.dp,
+                    spotColor = NeonAccent,
+                    shape = RoundedCornerShape(24.dp)
+                )
         )
     }
+}
+
+private fun Modifier.glassmorphism(): Modifier = composed {
+    val glassModifier = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        Modifier.graphicsLayer {
+            renderEffect = RenderEffect.createBlurEffect(
+                20f, 20f, Shader.TileMode.DECAL
+            ).asComposeRenderEffect()
+        }
+    } else {
+        Modifier
+    }
+
+    this
+        .clip(DockShape)
+        .then(glassModifier)
+        .background(DockGlassColor)
 }

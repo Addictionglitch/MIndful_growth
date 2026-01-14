@@ -3,6 +3,8 @@ package com.example.mindfulgrowth.ui.components
 import androidx.compose.animation.*
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -56,16 +58,16 @@ fun TooltipPopup(
         ) {
             GlassCard(
                 modifier = modifier,
-                cornerRadius = 4.dp,
-                contentPadding = PaddingValues(
-                    horizontal = mediumSpacing,
-                    vertical = smallSpacing
-                )
+                shape = RoundedCornerShape(4.dp)
             ) {
                 Text(
                     text = text,
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(SystemConfigColors.TEXT_PRIMARY)
+                    color = Color(SystemConfigColors.TEXT_PRIMARY),
+                    modifier = Modifier.padding(
+                        horizontal = mediumSpacing,
+                        vertical = smallSpacing
+                    )
                 )
             }
         }
