@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape // Added import
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Park
 import androidx.compose.material.icons.rounded.PlayArrow
@@ -33,8 +34,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mindfulgrowth.ui.components.GlassCard
 import com.example.mindfulgrowth.ui.theme.MindfulGrowthTheme
-import com.example.mindfulgrowth.ui.theme.NeonCyan
-import com.example.mindfulgrowth.ui.theme.NeonGreen
+import com.example.mindfulgrowth.ui.theme.MindfulPalette // Import MindfulPalette
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -110,7 +110,7 @@ fun HomeScreen(viewModel: HomeViewModel = androidx.lifecycle.viewmodel.compose.v
             )
 
             if (timerState.sessionComplete) {
-                Text("Session Complete!", color = NeonGreen, fontSize = 24.sp, fontFamily = FontFamily.Monospace)
+                Text("Session Complete!", color = MindfulPalette.NeonGreen, fontSize = 24.sp, fontFamily = FontFamily.Monospace)
             } else {
                 Row(
                     modifier = Modifier
@@ -132,7 +132,7 @@ fun HomeScreen(viewModel: HomeViewModel = androidx.lifecycle.viewmodel.compose.v
                 Icon(
                     imageVector = if (timerState.isActive) Icons.Rounded.Stop else Icons.Rounded.PlayArrow,
                     contentDescription = if (timerState.isActive) "Stop" else "Start",
-                    tint = if (timerState.isActive) NeonGreen else NeonCyan,
+                    tint = MindfulPalette.NeonGreen,
                     modifier = Modifier.size(60.dp)
                 )
             }
@@ -173,7 +173,7 @@ fun FocusTimerRing(
             )
 
             drawArc(
-                color = NeonCyan,
+                color = MindfulPalette.NeonGreen,
                 startAngle = -90f,
                 sweepAngle = 360 * animatedProgress,
                 useCenter = false,
@@ -182,7 +182,7 @@ fun FocusTimerRing(
 
             if (isActive) {
                 drawArc(
-                    color = NeonGreen,
+                    color = MindfulPalette.NeonGreen,
                     startAngle = -90f,
                     sweepAngle = 360 * animatedProgress,
                     useCenter = false,
@@ -195,7 +195,7 @@ fun FocusTimerRing(
             Icon(
                 imageVector = Icons.Rounded.Park,
                 contentDescription = "Growth Tree",
-                tint = if (isActive) NeonGreen else Color.White,
+                tint = if (isActive) MindfulPalette.NeonGreen else Color.White,
                 modifier = Modifier.size(100.dp * if (isActive) breathing else 1f)
             )
             Text(
@@ -210,7 +210,7 @@ fun FocusTimerRing(
 
 @Composable
 fun InfoCard(title: String, value: String) {
-    GlassCard(cornerRadius = 16.dp) {
+    GlassCard(shape = RoundedCornerShape(16.dp)) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(16.dp)

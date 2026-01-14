@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
+import com.example.mindfulgrowth.ui.theme.MindfulPalette // Import MindfulPalette
 
 private val DarkColorScheme = darkColorScheme(
     background = MindfulPalette.Void,

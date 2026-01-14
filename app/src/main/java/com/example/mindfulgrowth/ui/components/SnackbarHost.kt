@@ -15,7 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.mindfulgrowth.ui.theme.SystemConfigColors
+import com.example.mindfulgrowth.ui.theme.MindfulPalette
 import com.example.mindfulgrowth.ui.theme.spacing
 import kotlinx.coroutines.delay
 
@@ -78,19 +78,19 @@ private fun CustomSnackbar(
     when (type) {
         SnackbarType.SUCCESS -> {
             icon = Icons.Default.CheckCircle
-            iconColor = Color(SystemConfigColors.NEON_GREEN_ACCENT)
+            iconColor = MindfulPalette.NeonGreen
         }
         SnackbarType.ERROR -> {
             icon = Icons.Default.Error
-            iconColor = Color(SystemConfigColors.ACCENT_RED_PRIMARY)
+            iconColor = Color.Red // Placeholder, assuming a specific red might be added to MindfulPalette later.
         }
         SnackbarType.WARNING -> {
             icon = Icons.Default.Warning
-            iconColor = Color(SystemConfigColors.ACCENT_RED_SECONDARY)
+            iconColor = Color.Yellow // Placeholder
         }
         SnackbarType.INFO -> {
             icon = Icons.Default.Info
-            iconColor = Color(SystemConfigColors.TEXT_SECONDARY)
+            iconColor = MindfulPalette.TextMedium
         }
     }
 
@@ -98,7 +98,7 @@ private fun CustomSnackbar(
         modifier = modifier
             .fillMaxWidth()
             .padding(spacing.medium),
-        cornerRadius = 16.dp
+        shape = RoundedCornerShape(16.dp) // Replaced cornerRadius with shape
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -122,7 +122,7 @@ private fun CustomSnackbar(
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontWeight = FontWeight.Medium
                     ),
-                    color = Color(SystemConfigColors.TEXT_PRIMARY)
+                    color = MindfulPalette.TextHigh
                 )
             }
 
@@ -130,7 +130,7 @@ private fun CustomSnackbar(
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = "Dismiss",
-                    tint = Color(SystemConfigColors.TEXT_SECONDARY).copy(alpha = 0.7f),
+                    tint = MindfulPalette.TextMedium.copy(alpha = 0.7f),
                     modifier = Modifier.size(20.dp)
                 )
             }

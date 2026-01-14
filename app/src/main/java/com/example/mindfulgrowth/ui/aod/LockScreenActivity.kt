@@ -20,8 +20,8 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
+import com.example.mindfulgrowth.MindfulGrowthApplication
 import com.example.mindfulgrowth.MindfulLockScreen
-import com.example.mindfulgrowth.data.AppDatabase
 import com.example.mindfulgrowth.data.FocusSession
 import com.example.mindfulgrowth.ui.theme.MindfulGrowthTheme
 import kotlinx.coroutines.delay
@@ -37,15 +37,8 @@ class LockScreenActivity : ComponentActivity(), SensorEventListener {
     // Holds the state for "Pocket Mode" (screen off if covered)
     private var isCovered by mutableStateOf(false)
 
-    // Get the database instance
-    private val db by lazy {
-        androidx.room.Room.databaseBuilder(
-            applicationContext,
-            AppDatabase::class.java, "mindful-db"
-        ).build()
-    }
-
-    private val dao by lazy { db.focusDao() }
+    // Get the database instance from the Application singleton
+    private val dao by lazy { (application as MindfulGrowthApplication).database.focusDao() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -130,10 +123,8 @@ class LockScreenActivity : ComponentActivity(), SensorEventListener {
     }
 
     private fun setupWindowFlags() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-            setShowWhenLocked(true)
-            setTurnScreenOn(true)
-        }
+        setShowWhenLocked(true)
+        setTurnScreenOn(true)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         // Initial brightness

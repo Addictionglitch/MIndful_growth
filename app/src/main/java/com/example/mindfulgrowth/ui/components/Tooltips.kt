@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
-import com.example.mindfulgrowth.ui.theme.SystemConfigColors
+import com.example.mindfulgrowth.ui.theme.MindfulPalette // Import MindfulPalette
 import com.example.mindfulgrowth.ui.theme.spacing
 import kotlinx.coroutines.delay
 
@@ -59,12 +59,12 @@ fun TooltipPopup(
         ) {
             GlassCard(
                 modifier = modifier,
-                cornerRadius = 4.dp
+                shape = RoundedCornerShape(4.dp) // Replaced cornerRadius with shape
             ) {
                 Text(
                     text = text,
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(SystemConfigColors.TEXT_PRIMARY),
+                    color = MindfulPalette.TextHigh, // Replaced SystemConfigColors.TEXT_PRIMARY
                     modifier = Modifier.padding(
                         horizontal = mediumSpacing,
                         vertical = smallSpacing

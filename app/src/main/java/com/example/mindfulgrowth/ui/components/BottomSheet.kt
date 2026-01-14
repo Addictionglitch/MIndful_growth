@@ -7,7 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.* // Import all layout components
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,7 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import com.example.mindfulgrowth.ui.theme.SystemConfigColors
+// Removed unused SystemConfigColors import
 import com.example.mindfulgrowth.ui.theme.spacing
 
 @Composable
@@ -74,7 +74,7 @@ fun ModalBottomSheet(
                         indication = null,
                         interactionSource = remember { MutableInteractionSource() }
                     ),
-                cornerRadius = 28.dp
+                shape = RoundedCornerShape(28.dp) // FIXED: Replaced cornerRadius with shape
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth().padding(extraLargeSpacing),

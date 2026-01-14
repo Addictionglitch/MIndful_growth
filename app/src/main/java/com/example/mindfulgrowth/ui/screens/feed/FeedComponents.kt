@@ -20,7 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.mindfulgrowth.ui.components.GlassCard
-import com.example.mindfulgrowth.ui.theme.NeonCyan
+import com.example.mindfulgrowth.ui.theme.MindfulPalette // Import MindfulPalette
 
 @Composable
 fun FeedPostCard(post: Post) {
@@ -28,7 +28,7 @@ fun FeedPostCard(post: Post) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp),
-        cornerRadius = 24.dp
+        shape = RoundedCornerShape(24.dp) // Replaced cornerRadius with shape
     ) {
         Column {
             // Header
@@ -85,7 +85,7 @@ fun FeedPostCard(post: Post) {
                     Icon(
                         imageVector = Icons.Rounded.Bolt,
                         contentDescription = "Resonance",
-                        tint = NeonCyan
+                        tint = MindfulPalette.NeonGreen
                     )
                 }
             }

@@ -8,6 +8,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Public // Import for Feed icon
 import androidx.compose.material.icons.rounded.QueryStats
 import androidx.compose.material.icons.rounded.Yard
 import androidx.compose.material.icons.rounded.MilitaryTech
@@ -26,6 +27,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.mindfulgrowth.ui.components.GlassCard
+import com.example.mindfulgrowth.ui.theme.MindfulPalette // Import MindfulPalette
 
 private enum class SatelliteState { Collapsed, Expanded }
 
@@ -44,10 +46,11 @@ fun NeuroSeedNavigation(
         label = "MenuTransition"
     )
 
+    // Updated menu items: Home (central), Feed, Stats, Garden
     val menuItems = listOf(
-        SatelliteMenuItem(Icons.Rounded.QueryStats, 1), // Stats
-        SatelliteMenuItem(Icons.Rounded.MilitaryTech, 3), // Ranked
-        SatelliteMenuItem(Icons.Rounded.Yard, 0)       // Garden
+        SatelliteMenuItem(Icons.Default.Public, 1), // Feed
+        SatelliteMenuItem(Icons.Rounded.QueryStats, 2), // Stats
+        SatelliteMenuItem(Icons.Rounded.Yard, 3)       // Garden
     )
 
     // Breathing animation for the central anchor
@@ -70,9 +73,9 @@ fun NeuroSeedNavigation(
         // Satellite Buttons
         menuItems.forEachIndexed { index, item ->
             val targetOffset = when (index) {
-                0 -> Offset(-80f, -40f) // Left
-                1 -> Offset(0f, -90f)   // Top
-                else -> Offset(80f, -40f) // Right
+                0 -> Offset(-80f, -40f) // Left - Feed
+                1 -> Offset(0f, -90f)   // Top - Stats
+                else -> Offset(80f, -40f) // Right - Garden
             }
 
             val satelliteOffset by transition.animateOffset(
@@ -100,7 +103,7 @@ fun NeuroSeedNavigation(
                             isMenuOpen = false
                         }
                     },
-                cornerRadius = 999.dp // Circle
+                shape = CircleShape // Replaced cornerRadius with shape
             ) {
                 Icon(
                     imageVector = item.icon,
@@ -111,7 +114,7 @@ fun NeuroSeedNavigation(
             }
         }
 
-        // The Central Anchor (Seed)
+        // The Central Anchor (Seed) - Assumed to be Home
         GlassCard(
             modifier = Modifier
                 .size(64.dp)
@@ -128,24 +131,25 @@ fun NeuroSeedNavigation(
                     detectDragGestures { change, dragAmount ->
                         change.consume()
                         when {
-                            dragAmount.x < -10 -> { // Swipe Left
+                            dragAmount.x < -10 -> { // Swipe Left to Stats
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                onTabSelected(1) // Go to Stats
+                                onTabSelected(2)
                             }
-                            dragAmount.x > 10 -> { // Swipe Right
+                            dragAmount.x > 10 -> { // Swipe Right to Garden
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                onTabSelected(0) // Go to Garden
+                                onTabSelected(3)
                             }
                         }
                     }
                 },
-            cornerRadius = 999.dp // Circle
+            shape = CircleShape // Replaced cornerRadius with shape
         ) {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 drawCircle(
                     brush = Brush.radialGradient(
-                        colors = listOf(Color.White.copy(0.3f), Color.Transparent),
-                    )
+                        colors = listOf(MindfulPalette.TextHigh.copy(0.3f), Color.Transparent),
+                    ),
+                    radius = size.minDimension / 2.0f
                 )
             }
         }

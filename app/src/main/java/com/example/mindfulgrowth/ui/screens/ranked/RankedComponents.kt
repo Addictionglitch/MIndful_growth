@@ -26,13 +26,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.mindfulgrowth.ui.components.GlassCard
-import com.example.mindfulgrowth.ui.theme.NeonCyan
-import com.example.mindfulgrowth.ui.theme.NeonGreen
+import com.example.mindfulgrowth.ui.theme.MindfulPalette // Import MindfulPalette
+import androidx.compose.foundation.shape.RoundedCornerShape // Import RoundedCornerShape
 
 enum class RankTier(val color: Color) {
     IRON(Color.Gray.copy(alpha = 0.6f)),
     GOLD(Color(0xFFFFD700)),
-    DIAMOND(NeonCyan),
+    DIAMOND(MindfulPalette.NeonGreen),
     VOID(Color(0xFFE040FB))
 }
 
@@ -97,7 +97,7 @@ fun LeaderboardItem(
 
     GlassCard(
         modifier = Modifier.fillMaxWidth(),
-        cornerRadius = 24.dp
+        shape = RoundedCornerShape(24.dp) // Replaced cornerRadius with shape
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
@@ -128,7 +128,7 @@ fun LeaderboardItem(
                 text = focusTime,
                 fontSize = 16.sp,
                 fontFamily = FontFamily.Monospace,
-                color = NeonGreen
+                color = MindfulPalette.NeonGreen
             )
         }
     }
@@ -140,7 +140,7 @@ fun UserPinnedCard(rank: Int, pointsToNext: Int) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
-        cornerRadius = 24.dp
+        shape = RoundedCornerShape(24.dp) // Replaced cornerRadius with shape
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -153,7 +153,7 @@ fun UserPinnedCard(rank: Int, pointsToNext: Int) {
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("NEXT RANK", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
-                Text("$pointsToNext MINS", color = NeonCyan, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                Text("$pointsToNext MINS", color = MindfulPalette.NeonGreen, fontSize = 24.sp, fontWeight = FontWeight.Bold)
             }
         }
     }

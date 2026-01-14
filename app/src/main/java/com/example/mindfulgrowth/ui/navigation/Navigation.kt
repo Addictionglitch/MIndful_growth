@@ -20,13 +20,17 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Public
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Yard
+import androidx.compose.material.icons.filled.Settings // Import for Settings icon
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.mutableStateOf // Import for mutableStateOf
+import androidx.compose.runtime.setValue // Import for setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
@@ -39,29 +43,35 @@ import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.example.mindfulgrowth.ui.feed.FeedScreen
 import com.example.mindfulgrowth.ui.screens.GardenScreen
-import com.example.mindfulgrowth.ui.screens.SettingsScreen
+import com.example.mindfulgrowth.ui.screens.home.HomeScreen
 import com.example.mindfulgrowth.ui.screens.stats.StatsScreen
+import com.example.mindfulgrowth.ui.theme.MindfulPalette
+import com.example.mindfulgrowth.ui.components.ModalBottomSheet // Import ModalBottomSheet
+import com.example.mindfulgrowth.ui.components.GlassCard // Import GlassCard
+import com.example.mindfulgrowth.ui.screens.settings.SettingsScreen // Import SettingsScreen
 import kotlinx.coroutines.launch
 
 // --- Constants & Configuration ---
-private val NeonAccent = Color(0xFF00FFC2)
 private val DockGlassColor = Color(0xFF0A0A0A).copy(alpha = 0.85f)
 private val DockShape = RoundedCornerShape(32.dp)
 private val GhostLightIndicatorSize = 80.dp
 
 // --- Data Model for Navigation ---
 sealed class NavigationItem(val route: String, val icon: ImageVector, val title: String) {
+    object Home : NavigationItem("home", Icons.Default.Home, "Home")
+    object Feed : NavigationItem("feed", Icons.Default.Public, "Feed")
     object Stats : NavigationItem("stats", Icons.Default.BarChart, "Stats")
     object Garden : NavigationItem("garden", Icons.Default.Yard, "Garden")
-    object Settings : NavigationItem("settings", Icons.Default.Settings, "Settings")
 }
 
 @Composable
 fun MindfulGrowthApp() {
-    val navItems = listOf(NavigationItem.Stats, NavigationItem.Garden, NavigationItem.Settings)
+    val navItems = listOf(NavigationItem.Home, NavigationItem.Feed, NavigationItem.Stats, NavigationItem.Garden)
     val pagerState = rememberPagerState(pageCount = { navItems.size })
     val coroutineScope = rememberCoroutineScope()
+    var showSettings by remember { mutableStateOf(false) } // State for showing settings modal
 
     Box(
         modifier = Modifier
@@ -74,9 +84,10 @@ fun MindfulGrowthApp() {
             modifier = Modifier.fillMaxSize()
         ) { page ->
             when (navItems[page]) {
+                NavigationItem.Home -> HomeScreen()
+                NavigationItem.Feed -> FeedScreen()
                 NavigationItem.Stats -> StatsScreen()
                 NavigationItem.Garden -> GardenScreen()
-                NavigationItem.Settings -> SettingsScreen()
             }
         }
 
@@ -91,6 +102,38 @@ fun MindfulGrowthApp() {
             },
             modifier = Modifier.align(Alignment.BottomCenter)
         )
+
+        // --- Floating Gear Button for Settings ---
+        GlassCard(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(16.dp)
+                .windowInsetsPadding(WindowInsets.statusBars)
+                .size(48.dp)
+                .clickable(onClick = { showSettings = true }),
+            shape = RoundedCornerShape(50)
+        ) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = "Settings",
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        }
+
+        // --- Settings Modal Bottom Sheet ---
+        ModalBottomSheet(
+            visible = showSettings,
+            onDismiss = { showSettings = false }
+        ) {
+            // Content for the settings screen
+            SettingsScreen(onClose = { showSettings = false })
+        }
     }
 }
 
@@ -122,7 +165,7 @@ private fun LiquidGlassBottomNavigation(
         ) {
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(NeonAccent.copy(alpha = 0.3f), Color.Transparent),
+                    colors = listOf(MindfulPalette.NeonGreen.copy(alpha = 0.3f), Color.Transparent),
                 ),
                 radius = size.minDimension / 2.0f
             )
@@ -169,7 +212,7 @@ private fun DockIcon(
     )
 
     val iconColor by animateColorAsState(
-        targetValue = if (isSelected) NeonAccent else Color.White.copy(alpha = 0.4f),
+        targetValue = if (isSelected) MindfulPalette.NeonGreen else Color.White.copy(alpha = 0.4f),
         animationSpec = spring(),
         label = "IconColor"
     )
@@ -193,7 +236,7 @@ private fun DockIcon(
                 .scale(scale)
                 .shadow(
                     elevation = if (isSelected) 8.dp else 0.dp,
-                    spotColor = NeonAccent,
+                    spotColor = MindfulPalette.NeonGreen,
                     shape = RoundedCornerShape(24.dp)
                 )
         )

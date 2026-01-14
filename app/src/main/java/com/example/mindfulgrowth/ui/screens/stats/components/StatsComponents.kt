@@ -27,8 +27,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.mindfulgrowth.ui.components.GlassCard
-import com.example.mindfulgrowth.ui.theme.NeonCyan
-import com.example.mindfulgrowth.ui.theme.NeonGreen
+import com.example.mindfulgrowth.ui.theme.MindfulPalette // Import MindfulPalette
 
 @Composable
 fun StatsLineGraph(
@@ -90,20 +89,20 @@ fun StatsLineGraph(
 
             drawPath(
                 path = path,
-                brush = Brush.verticalGradient(listOf(NeonCyan, Color.Transparent)),
+                brush = Brush.verticalGradient(listOf(MindfulPalette.NeonGreen, Color.Transparent)),
                 style = Stroke(width = 3.dp.toPx(), pathEffect = PathEffect.cornerPathEffect(16.dp.toPx()))
             )
 
             selectedIndex?.let { index ->
                 val x = index * stepX
                 drawLine(
-                    color = NeonGreen,
+                    color = MindfulPalette.NeonGreen,
                     start = Offset(x, 0f),
                     end = Offset(x, size.height),
                     strokeWidth = 2.dp.toPx()
                 )
                 drawCircle(
-                    color = NeonGreen,
+                    color = MindfulPalette.NeonGreen,
                     radius = 8.dp.toPx(),
                     center = Offset(x, size.height - data[index] * stepY)
                 )
@@ -120,14 +119,14 @@ fun FocusHeroCard(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
-    GlassCard(modifier = modifier, cornerRadius = 24.dp) {
+    GlassCard(modifier = modifier, shape = RoundedCornerShape(24.dp)) { // Updated call site
         Column(
             modifier = Modifier.padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            AnimatedContent(targetState = isScrubbing, label = "TitleValueTransition") { scrubbing ->
+            AnimatedContent(targetState = isScrubbing, label = "TitleValueTransition") { currentIsScrubbing -> // Capture the state as currentIsScrubbing
                 Text(
-                    text = if (scrubbing) String.format("%.1f", value) + "h" else title,
+                    text = if (currentIsScrubbing) String.format("%.1f", value) + "h" else title, // Use currentIsScrubbing
                     fontSize = 24.sp,
                     fontFamily = FontFamily.Monospace,
                     color = Color.White
@@ -148,13 +147,13 @@ fun MetricCard(
     icon: ImageVector,
     modifier: Modifier = Modifier
 ) {
-    GlassCard(modifier = modifier, cornerRadius = 16.dp) {
+    GlassCard(modifier = modifier, shape = RoundedCornerShape(16.dp)) { // Updated call site
         Column(
             modifier = Modifier.padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Icon(imageVector = icon, contentDescription = title, tint = NeonCyan)
+            Icon(imageVector = icon, contentDescription = title, tint = MindfulPalette.NeonGreen)
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = title, fontSize = 16.sp, color = Color.White.copy(alpha = 0.7f))
             Text(text = value, fontSize = 20.sp, fontFamily = FontFamily.Monospace, color = Color.White)

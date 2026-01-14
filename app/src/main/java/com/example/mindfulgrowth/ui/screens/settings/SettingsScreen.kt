@@ -19,7 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.* // Added for remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,20 +47,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import com.example.mindfulgrowth.R
-
-// --- COLORS (Crimson Glass Palette) ---
-private val CrimsonCore = Color(0xFFFF0007)
-private val VoidBlack = Color(0xFF050505)
-private val TextPrimary = Color.White
-private val TextSecondary = Color.White.copy(alpha = 0.7f)
+import com.example.mindfulgrowth.ui.theme.MindfulPalette
 
 // --- TYPOGRAPHY ---
 private val PixelFont = FontFamily.Monospace
 
 // --- LOGIC SECTION ---
-// (Omitted unchanged Logic classes for brevity, only UI updated below)
-// ... [Keep SettingsViewModel, PreferencesKeys, etc. unchanged] ...
-
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "mindful_settings")
 
 object PreferencesKeys {
@@ -161,20 +153,46 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
 
 @Composable
 fun SettingsScreen(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClose: () -> Unit // Added onClose callback
 ) {
     val context = LocalContext.current
     val viewModel = remember { SettingsViewModel(context) }
     val uiState by viewModel.uiState.collectAsState()
 
-    Box(modifier = modifier.fillMaxSize()) {
-        // Removed Background Image and Scrim to use MainActivity's global background
+    Column(modifier = modifier.fillMaxSize()) { // Changed from Box to Column
+        // Drag Handle and Close Button Row
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 16.dp, top = 16.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Drag Handle
+            Box(
+                modifier = Modifier
+                    .width(40.dp)
+                    .height(4.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(Color.White.copy(alpha = 0.2f))
+            )
+            // Spacer to push Close button to the right
+            Spacer(modifier = Modifier.weight(1f))
+            // Close Button
+            TextButton(onClick = onClose) {
+                Text("Close", color = MindfulPalette.TextMedium, fontFamily = PixelFont)
+            }
+        }
+
+        // Spacer between header row and content
+        Spacer(modifier = Modifier.height(16.dp)) // Add some space after the drag handle row
 
         LazyColumn(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 20.dp),
-            contentPadding = PaddingValues(top = 60.dp, bottom = 120.dp),
+                .fillMaxWidth()
+                .weight(1f), // Occupy remaining vertical space
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 0.dp), // Adjusted padding
             verticalArrangement = Arrangement.spacedBy(28.dp)
         ) {
             // --- HEADER ---
@@ -182,7 +200,7 @@ fun SettingsScreen(
                 Text(
                     text = "SYSTEM_CONFIG",
                     style = MaterialTheme.typography.displaySmall,
-                    color = TextPrimary,
+                    color = MindfulPalette.TextHigh,
                     fontFamily = PixelFont,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 2.sp,
@@ -195,19 +213,19 @@ fun SettingsScreen(
                 item {
                     GlassCard(
                         modifier = Modifier.fillMaxWidth(),
-                        cornerRadius = 24.dp
+                        shape = RoundedCornerShape(24.dp)
                     ) {
                         Column(Modifier.padding(20.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Rounded.Warning, null, tint = CrimsonCore)
+                                Icon(Icons.Rounded.Warning, null, tint = MindfulPalette.CrimsonCore)
                                 Spacer(Modifier.width(12.dp))
-                                Text("PERMISSION_REQUIRED", color = TextPrimary, fontWeight = FontWeight.Bold, fontFamily = PixelFont)
+                                Text("PERMISSION_REQUIRED", color = MindfulPalette.TextHigh, fontWeight = FontWeight.Bold, fontFamily = PixelFont)
                             }
                             Spacer(Modifier.height(12.dp))
                             Text(
                                 "Overlay access required for visual injection.",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = TextSecondary,
+                                color = MindfulPalette.TextMedium,
                                 fontFamily = PixelFont
                             )
                             Spacer(Modifier.height(20.dp))
@@ -223,7 +241,7 @@ fun SettingsScreen(
             // --- DISPLAY SECTION ---
             item {
                 SettingsSectionTitle("VISUAL_ARRAY")
-                GlassCard(cornerRadius = 24.dp) {
+                GlassCard(shape = RoundedCornerShape(24.dp)) {
                     Column(
                         modifier = Modifier.padding(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -245,11 +263,11 @@ fun SettingsScreen(
                                     Icon(
                                         Icons.Rounded.Brightness6,
                                         null,
-                                        tint = TextSecondary,
+                                        tint = MindfulPalette.TextMedium,
                                         modifier = Modifier.size(18.dp)
                                     )
                                     Spacer(Modifier.width(12.dp))
-                                    Text("LUMINANCE", color = TextPrimary, fontSize = 14.sp, fontFamily = PixelFont)
+                                    Text("LUMINANCE", color = MindfulPalette.TextHigh, fontSize = 14.sp, fontFamily = PixelFont)
                                 }
                                 Spacer(Modifier.height(16.dp))
                                 GlassSlider(
@@ -265,7 +283,7 @@ fun SettingsScreen(
             // --- BEHAVIOR SECTION ---
             item {
                 SettingsSectionTitle("BEHAVIOR_MATRIX")
-                GlassCard(cornerRadius = 24.dp) {
+                GlassCard(shape = RoundedCornerShape(24.dp)) {
                     Column(
                         modifier = Modifier.padding(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -288,11 +306,11 @@ fun SettingsScreen(
                                     Icon(
                                         Icons.Rounded.TouchApp,
                                         null,
-                                        tint = TextSecondary,
+                                        tint = MindfulPalette.TextMedium,
                                         modifier = Modifier.size(18.dp)
                                     )
                                     Spacer(Modifier.width(12.dp))
-                                    Text("WAKE TRIGGER", color = TextPrimary, fontSize = 14.sp, fontFamily = PixelFont)
+                                    Text("WAKE TRIGGER", color = MindfulPalette.TextHigh, fontSize = 14.sp, fontFamily = PixelFont)
                                 }
                                 Spacer(Modifier.height(16.dp))
                                 GlassSegmentedPicker(
@@ -319,15 +337,13 @@ fun SettingsScreen(
         }
 
         // --- SCROLL FADE GRADIENT ---
-        // A smooth fade at the bottom to blend content into the void
         Box(
             modifier = Modifier
-                .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .height(100.dp)
                 .background(
                     brush = Brush.verticalGradient(
-                        colors = listOf(Color.Transparent, VoidBlack)
+                        colors = listOf(Color.Transparent, MindfulPalette.Void)
                     )
                 )
         )
@@ -342,13 +358,13 @@ fun SettingsSectionTitle(title: String) {
         Box(
             modifier = Modifier
                 .size(width = 4.dp, height = 16.dp)
-                .background(CrimsonCore)
+                .background(MindfulPalette.CrimsonCore)
         )
         Spacer(Modifier.width(12.dp))
         Text(
             text = title,
             style = MaterialTheme.typography.labelMedium,
-            color = TextSecondary,
+            color = MindfulPalette.TextMedium,
             fontFamily = PixelFont,
             letterSpacing = 2.sp
         )
@@ -367,10 +383,10 @@ fun InnerGlassPanel(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(Color.White.copy(alpha = 0.03f)) // Very subtle lift
+            .background(Color.White.copy(alpha = 0.03f))
             .border(
                 width = 1.dp,
-                color = Color.White.copy(alpha = 0.05f), // Subtle definition
+                color = Color.White.copy(alpha = 0.05f),
                 shape = RoundedCornerShape(16.dp)
             )
     ) {
@@ -390,8 +406,8 @@ fun GlassSegmentedPicker(
     ) {
         options.forEachIndexed { index, label ->
             val isSelected = index == selectedIndex
-            val animatedColor by animateColorAsState(if (isSelected) CrimsonCore else Color.Transparent, label = "bg")
-            val borderColor = if (isSelected) CrimsonCore else Color.White.copy(alpha = 0.1f)
+            val animatedColor by animateColorAsState(if (isSelected) MindfulPalette.CrimsonCore else Color.Transparent, label = "bg")
+            val borderColor = if (isSelected) MindfulPalette.CrimsonCore else Color.White.copy(alpha = 0.1f)
 
             Box(
                 modifier = Modifier
@@ -407,7 +423,7 @@ fun GlassSegmentedPicker(
                     text = label,
                     fontFamily = PixelFont,
                     fontSize = 12.sp,
-                    color = if (isSelected) TextPrimary else TextSecondary,
+                    color = if (isSelected) MindfulPalette.TextHigh else MindfulPalette.TextMedium,
                     textAlign = TextAlign.Center,
                     fontWeight = FontWeight.Bold
                 )
@@ -440,15 +456,15 @@ fun GlassToggleRow(
                 .border(1.dp, Color.White.copy(alpha = 0.1f), CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Icon(icon, null, tint = if (isChecked) CrimsonCore else TextSecondary, modifier = Modifier.size(20.dp))
+            Icon(icon, null, tint = if (isChecked) MindfulPalette.CrimsonCore else MindfulPalette.TextMedium, modifier = Modifier.size(20.dp))
         }
 
         Spacer(Modifier.width(16.dp))
 
         Column(Modifier.weight(1f)) {
-            Text(title, color = TextPrimary, fontSize = 16.sp, fontFamily = PixelFont, fontWeight = FontWeight.SemiBold)
+            Text(title, color = MindfulPalette.TextHigh, fontSize = 16.sp, fontFamily = PixelFont, fontWeight = FontWeight.SemiBold)
             if (subtitle != null) {
-                Text(subtitle, color = TextSecondary, style = MaterialTheme.typography.bodySmall, fontFamily = PixelFont)
+                Text(subtitle, color = MindfulPalette.TextMedium, style = MaterialTheme.typography.bodySmall, fontFamily = PixelFont)
             }
         }
 
@@ -459,8 +475,8 @@ fun GlassToggleRow(
 @Composable
 fun GlassSwitch(checked: Boolean) {
     val thumbPos by animateFloatAsState(if (checked) 1f else 0f, label = "Switch")
-    val trackColor = if (checked) CrimsonCore.copy(alpha = 0.3f) else Color.White.copy(alpha = 0.05f)
-    val thumbColor = if (checked) CrimsonCore else TextSecondary
+    val trackColor = if (checked) MindfulPalette.CrimsonCore.copy(alpha = 0.3f) else Color.White.copy(alpha = 0.05f)
+    val thumbColor = if (checked) MindfulPalette.CrimsonCore else MindfulPalette.TextMedium
 
     Box(
         modifier = Modifier
@@ -476,7 +492,7 @@ fun GlassSwitch(checked: Boolean) {
                 .offset(x = (20 * thumbPos).dp)
                 .padding(4.dp)
                 .size(20.dp)
-                .neonGlow(if(checked) CrimsonCore else Color.Transparent, 10f, 0.8f) // Glow only when active
+                .neonGlow(if(checked) MindfulPalette.CrimsonCore else Color.Transparent, 10f, 0.8f)
                 .clip(CircleShape)
                 .background(thumbColor)
         )
@@ -489,8 +505,8 @@ fun GlassSlider(value: Float, onValueChange: (Float) -> Unit) {
         value = value,
         onValueChange = onValueChange,
         colors = SliderDefaults.colors(
-            thumbColor = CrimsonCore,
-            activeTrackColor = CrimsonCore,
+            thumbColor = MindfulPalette.CrimsonCore,
+            activeTrackColor = MindfulPalette.CrimsonCore,
             inactiveTrackColor = Color.White.copy(alpha = 0.1f)
         ),
         modifier = Modifier.height(20.dp)
@@ -503,12 +519,12 @@ fun GlassButton(text: String, onClick: () -> Unit) {
         modifier = Modifier
             .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)
-            .background(CrimsonCore.copy(alpha = 0.1f))
-            .border(1.dp, CrimsonCore.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+            .background(MindfulPalette.CrimsonCore.copy(alpha = 0.1f))
+            .border(1.dp, MindfulPalette.CrimsonCore.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
             .padding(horizontal = 20.dp, vertical = 12.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(text, color = CrimsonCore, fontWeight = FontWeight.Bold, fontFamily = PixelFont)
+        Text(text, color = MindfulPalette.CrimsonCore, fontWeight = FontWeight.Bold, fontFamily = PixelFont)
     }
 }
 
